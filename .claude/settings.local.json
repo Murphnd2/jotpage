@@ -3,7 +3,13 @@
     "allow": [
       "Bash(git add:*)",
       "Bash(git commit -m ':*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(mvn compile:*)",
+      "Bash(./mvnw compile:*)",
+      "Bash(\"C:/Users/kevinmurphy/.jdks/openjdk-24/bin/javac\" --version)",
+      "Bash(where mvn:*)",
+      "Bash(xargs grep:*)",
+      "Bash(find /c/Users/kevinmurphy/IdeaProjects/jotpage/src/main/java -type f -name \"*.java\" -exec grep -l \"tag\\\\|Tag\" {} \\\\;)"
     ]
   }
 }
