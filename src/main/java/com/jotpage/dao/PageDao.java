@@ -15,7 +15,7 @@ public class PageDao {
 
     private static final String SELECT_COLUMNS =
             "SELECT id, user_id, page_type_id, title, sort_order, ink_data, text_layers, "
-                    + "is_closed, created_at, updated_at FROM pages";
+                    + "image_layers, is_closed, created_at, updated_at FROM pages";
 
     public Page findById(long id, long userId) throws SQLException {
         String sql = SELECT_COLUMNS + " WHERE id = ? AND user_id = ?";
@@ -122,15 +122,16 @@ public class PageDao {
             }
         }
 
-        String sql = "UPDATE pages SET ink_data = ?, text_layers = ?, is_closed = ? "
+        String sql = "UPDATE pages SET ink_data = ?, text_layers = ?, image_layers = ?, is_closed = ? "
                 + "WHERE id = ? AND user_id = ?";
         try (Connection conn = DbUtil.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, page.getInkData());
             ps.setString(2, page.getTextLayers());
-            ps.setBoolean(3, page.isClosed());
-            ps.setLong(4, page.getId());
-            ps.setLong(5, page.getUserId());
+            ps.setString(3, page.getImageLayers());
+            ps.setBoolean(4, page.isClosed());
+            ps.setLong(5, page.getId());
+            ps.setLong(6, page.getUserId());
             ps.executeUpdate();
         }
     }
@@ -169,6 +170,17 @@ public class PageDao {
         }
     }
 
+    public int countByUserId(long userId) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM pages WHERE user_id = ?";
+        try (Connection conn = DbUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getInt(1) : 0;
+            }
+        }
+    }
+
     public void delete(long id, long userId) throws SQLException {
         String sql = "DELETE FROM pages WHERE id = ? AND user_id = ?";
         try (Connection conn = DbUtil.getConnection();
@@ -188,6 +200,7 @@ public class PageDao {
         p.setSortOrder(rs.getInt("sort_order"));
         p.setInkData(rs.getString("ink_data"));
         p.setTextLayers(rs.getString("text_layers"));
+        p.setImageLayers(rs.getString("image_layers"));
         p.setClosed(rs.getBoolean("is_closed"));
         p.setCreatedAt(rs.getTimestamp("created_at"));
         p.setUpdatedAt(rs.getTimestamp("updated_at"));

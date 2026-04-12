@@ -30,8 +30,10 @@
     var btnUndo = document.getElementById('tool-undo');
     var btnRedo = document.getElementById('tool-redo');
     var textLayer = document.getElementById('text-layer');
+    var imageLayer = document.getElementById('image-layer');
     var fontSizeWrap = document.getElementById('font-size-wrap');
     var fontSizeSelect = document.getElementById('tool-fontsize');
+    var btnImage = document.getElementById('tool-image');
 
 
     var state = {
@@ -45,7 +47,9 @@
         historyIndex: -1,
         dirty: false,
         textLayers: [],
-        selectedTextId: null
+        selectedTextId: null,
+        imageLayers: [],
+        selectedImageId: null
     };
 
     // ------------------------------------------------------------------
@@ -78,6 +82,23 @@
     })();
 
     // ------------------------------------------------------------------
+    // Initial image layers from pageData
+    // ------------------------------------------------------------------
+    (function loadInitialImageLayers() {
+        var existing = pageData && pageData.imageLayers;
+        if (Array.isArray(existing)) {
+            for (var i = 0; i < existing.length; i++) {
+                var il = normalizeImageLayer(existing[i]);
+                if (il) {
+                    state.imageLayers.push(il);
+                    cacheImageLayer(il);
+                }
+            }
+        }
+        layoutImageHandles();
+    })();
+
+    // ------------------------------------------------------------------
     // Layout / canvas sizing
     // ------------------------------------------------------------------
     function fitCanvas() {
@@ -96,6 +117,7 @@
         wrap.style.width = targetW + 'px';
         wrap.style.height = targetH + 'px';
         layoutTextBlocks();
+        layoutImageHandles();
     }
     window.addEventListener('resize', fitCanvas);
     fitCanvas();
@@ -282,6 +304,7 @@
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
         drawBackground(pageData && pageData.backgroundType);
+        drawImageLayers();
         for (var i = 0; i < state.strokes.length; i++) {
             drawStroke(state.strokes[i]);
         }
@@ -389,11 +412,274 @@
     }
 
     // ------------------------------------------------------------------
+    // Image layer subsystem
+    // ------------------------------------------------------------------
+    function genImageId() {
+        return 'img-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6);
+    }
+
+    function normalizeImageLayer(raw) {
+        if (!raw || !raw.src) return null;
+        return {
+            id: raw.id || genImageId(),
+            src: raw.src,
+            x: typeof raw.x === 'number' ? raw.x : 0,
+            y: typeof raw.y === 'number' ? raw.y : 0,
+            width: typeof raw.width === 'number' ? raw.width : 400,
+            height: typeof raw.height === 'number' ? raw.height : 300,
+            _img: null,
+            _loaded: false,
+            _el: null
+        };
+    }
+
+    function cacheImageLayer(il) {
+        if (il._img) return;
+        il._img = new Image();
+        il._img.onload = function () {
+            il._loaded = true;
+            scheduleRender();
+        };
+        il._img.onerror = function () {
+            console.error('[ink-engine] failed to load image overlay', il.id);
+        };
+        il._img.src = il.src;
+    }
+
+    function drawImageLayers() {
+        for (var i = 0; i < state.imageLayers.length; i++) {
+            var il = state.imageLayers[i];
+            if (il._loaded && il._img) {
+                ctx.drawImage(il._img, il.x, il.y, il.width, il.height);
+            }
+        }
+    }
+
+    function serializeImageLayers() {
+        return state.imageLayers.map(function (il) {
+            return {
+                id: il.id,
+                src: il.src,
+                x: il.x,
+                y: il.y,
+                width: il.width,
+                height: il.height
+            };
+        });
+    }
+
+    function findImageLayer(id) {
+        for (var i = 0; i < state.imageLayers.length; i++) {
+            if (state.imageLayers[i].id === id) return state.imageLayers[i];
+        }
+        return null;
+    }
+
+    function removeImageLayer(id) {
+        for (var i = 0; i < state.imageLayers.length; i++) {
+            if (state.imageLayers[i].id === id) {
+                var il = state.imageLayers[i];
+                if (il._el && il._el.parentNode) il._el.parentNode.removeChild(il._el);
+                state.imageLayers.splice(i, 1);
+                state.dirty = true;
+                scheduleRender();
+                return;
+            }
+        }
+    }
+
+    // DOM handles for image overlays (move, resize, delete)
+    // (getCanvasScale is defined in the text block subsystem below)
+    function createImageHandleDom(il) {
+        if (!imageLayer) return;
+        var el = document.createElement('div');
+        el.className = 'image-handle';
+        el.setAttribute('data-id', il.id);
+
+        var del = document.createElement('button');
+        del.className = 'ih-delete';
+        del.type = 'button';
+        del.innerHTML = '&times;';
+        del.addEventListener('click', function (e) {
+            e.stopPropagation();
+            removeImageLayer(il.id);
+            if (state.selectedImageId === il.id) state.selectedImageId = null;
+        });
+        el.appendChild(del);
+
+        var resize = document.createElement('div');
+        resize.className = 'ih-resize';
+        el.appendChild(resize);
+
+        il._el = el;
+        imageLayer.appendChild(el);
+
+        // Move via drag on the handle body
+        attachImageDragHandler(il, el);
+        attachImageResizeHandler(il, resize);
+
+        // Select on click
+        el.addEventListener('pointerdown', function () {
+            selectImage(il.id);
+        });
+    }
+
+    function selectImage(id) {
+        state.selectedImageId = id;
+        if (imageLayer) {
+            imageLayer.querySelectorAll('.image-handle').forEach(function (h) {
+                h.classList.toggle('selected', h.getAttribute('data-id') === id);
+            });
+        }
+    }
+
+    function attachImageDragHandler(il, el) {
+        var dragStart = null;
+        el.addEventListener('pointerdown', function (e) {
+            if (e.target.closest('.ih-resize') || e.target.closest('.ih-delete')) return;
+            e.preventDefault();
+            e.stopPropagation();
+            dragStart = {
+                px: e.clientX, py: e.clientY,
+                ox: il.x, oy: il.y
+            };
+            el.setPointerCapture(e.pointerId);
+        });
+        el.addEventListener('pointermove', function (e) {
+            if (!dragStart) return;
+            var scale = getCanvasScale();
+            il.x = Math.max(0, Math.min(CANVAS_W - il.width,
+                    dragStart.ox + (e.clientX - dragStart.px) / scale));
+            il.y = Math.max(0, Math.min(CANVAS_H - il.height,
+                    dragStart.oy + (e.clientY - dragStart.py) / scale));
+            layoutImageHandle(il);
+            scheduleRender();
+            state.dirty = true;
+        });
+        function endDrag() { dragStart = null; }
+        el.addEventListener('pointerup', endDrag);
+        el.addEventListener('pointercancel', endDrag);
+    }
+
+    function attachImageResizeHandler(il, handle) {
+        var resizeStart = null;
+        handle.addEventListener('pointerdown', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            resizeStart = {
+                px: e.clientX, py: e.clientY,
+                ow: il.width, oh: il.height
+            };
+            handle.setPointerCapture(e.pointerId);
+        });
+        handle.addEventListener('pointermove', function (e) {
+            if (!resizeStart) return;
+            var scale = getCanvasScale();
+            var aspect = resizeStart.ow / resizeStart.oh;
+            var newW = Math.max(40, resizeStart.ow + (e.clientX - resizeStart.px) / scale);
+            var newH = newW / aspect;
+            // Clamp to canvas
+            newW = Math.min(newW, CANVAS_W - il.x);
+            newH = newW / aspect;
+            il.width = newW;
+            il.height = newH;
+            layoutImageHandle(il);
+            scheduleRender();
+            state.dirty = true;
+        });
+        function endResize() { resizeStart = null; }
+        handle.addEventListener('pointerup', endResize);
+        handle.addEventListener('pointercancel', endResize);
+    }
+
+    function layoutImageHandle(il) {
+        if (!il._el) return;
+        var scale = getCanvasScale();
+        il._el.style.left = (il.x * scale) + 'px';
+        il._el.style.top = (il.y * scale) + 'px';
+        il._el.style.width = (il.width * scale) + 'px';
+        il._el.style.height = (il.height * scale) + 'px';
+    }
+
+    function layoutImageHandles() {
+        for (var i = 0; i < state.imageLayers.length; i++) {
+            var il = state.imageLayers[i];
+            if (!il._el) createImageHandleDom(il);
+            layoutImageHandle(il);
+        }
+    }
+
+    // Add image from file input
+    function addImageFromFile(file) {
+        if (!file) return;
+        if (file.size > 5 * 1024 * 1024) {
+            alert('Image must be under 5 MB.');
+            return;
+        }
+        var reader = new FileReader();
+        reader.onload = function (ev) {
+            var src = ev.target.result;
+            var img = new Image();
+            img.onload = function () {
+                // Scale to ~40% of canvas width, preserving aspect ratio
+                var targetW = CANVAS_W * 0.4;
+                var aspect = img.naturalWidth / img.naturalHeight;
+                var w = Math.min(targetW, CANVAS_W - 100);
+                var h = w / aspect;
+                if (h > CANVAS_H - 100) {
+                    h = CANVAS_H - 100;
+                    w = h * aspect;
+                }
+                var il = normalizeImageLayer({
+                    src: src,
+                    x: (CANVAS_W - w) / 2,
+                    y: (CANVAS_H - h) / 2,
+                    width: w,
+                    height: h
+                });
+                cacheImageLayer(il);
+                state.imageLayers.push(il);
+                createImageHandleDom(il);
+                layoutImageHandle(il);
+                selectImage(il.id);
+                state.dirty = true;
+                scheduleRender();
+            };
+            img.src = src;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    // Hidden file input for image upload
+    var imageFileInput = document.createElement('input');
+    imageFileInput.type = 'file';
+    imageFileInput.accept = 'image/png,image/jpeg,.png,.jpg,.jpeg';
+    imageFileInput.style.display = 'none';
+    document.body.appendChild(imageFileInput);
+    imageFileInput.addEventListener('change', function () {
+        if (imageFileInput.files && imageFileInput.files[0]) {
+            addImageFromFile(imageFileInput.files[0]);
+        }
+        imageFileInput.value = '';
+    });
+
+    // ------------------------------------------------------------------
     // Toolbar
     // ------------------------------------------------------------------
     btnPen.addEventListener('click', function () { setTool('pen'); });
     btnEraser.addEventListener('click', function () { setTool('eraser'); });
     btnText.addEventListener('click', function () { setTool('text'); });
+    if (btnImage) {
+        btnImage.addEventListener('click', function () {
+            if (state.tool === 'image') {
+                // Already in image mode — open file picker to add another
+                imageFileInput.click();
+            } else {
+                setTool('image');
+                imageFileInput.click();
+            }
+        });
+    }
     colorInput.addEventListener('input', function () {
         state.color = colorInput.value;
         if (state.selectedTextId) {
@@ -430,9 +716,19 @@
         btnPen.classList.toggle('active', tool === 'pen');
         btnEraser.classList.toggle('active', tool === 'eraser');
         btnText.classList.toggle('active', tool === 'text');
+        if (btnImage) btnImage.classList.toggle('active', tool === 'image');
         textLayer.classList.toggle('text-mode', tool === 'text');
+        if (imageLayer) imageLayer.classList.toggle('image-mode', tool === 'image');
         if (tool !== 'text') {
             selectTextBlock(null);
+        }
+        if (tool !== 'image') {
+            state.selectedImageId = null;
+            if (imageLayer) {
+                imageLayer.querySelectorAll('.image-handle.selected').forEach(function (h) {
+                    h.classList.remove('selected');
+                });
+            }
         }
     }
 
@@ -475,7 +771,8 @@
         saveBtn.disabled = true;
         var body = {
             inkData: { strokes: state.strokes },
-            textLayers: serializeTextLayers()
+            textLayers: serializeTextLayers(),
+            imageLayers: serializeImageLayers()
         };
         var url = CONTEXT_PATH + '/app/page/' + pageData.id;
         console.log('[ink-engine] PUT', url, 'body=', body);

@@ -91,6 +91,14 @@ public class PageThumbnailServlet extends HttpServlet {
             } catch (Exception e) {
                 out.add("textLayers", JsonParser.parseString("[]"));
             }
+            try {
+                out.add("imageLayers",
+                        page.getImageLayers() == null || page.getImageLayers().isEmpty()
+                                ? JsonParser.parseString("[]")
+                                : JsonParser.parseString(page.getImageLayers()));
+            } catch (Exception e) {
+                out.add("imageLayers", JsonParser.parseString("[]"));
+            }
 
             resp.setStatus(HttpServletResponse.SC_OK);
             resp.setContentType("application/json");

@@ -1,5 +1,5 @@
 /*
- * JotPage — tablet immersive mode
+ * Jyrnyl — tablet immersive mode
  *
  * Purely presentational layer on top of ink-engine.js. Does not modify any
  * drawing logic; only reparents existing DOM nodes between their desktop
@@ -41,8 +41,10 @@
     var hotEdgeEl = document.getElementById('toolbarHotEdge');
     var toggleBtn = document.getElementById('immersive-toggle');
 
+    var firstBtnEl = document.getElementById('first-btn');
     var prevBtnEl = document.getElementById('prev-btn');
     var nextBtnEl = document.getElementById('next-btn');
+    var lastBtnEl = document.getElementById('last-btn');
 
     var saveBtn = document.getElementById('save-btn');
     var saveStatus = document.getElementById('save-status');
@@ -65,11 +67,13 @@
     var savedFlashTimer = null;
     var savedStatusObserver = null;
 
-    // Original prev/next hrefs captured before we append ?immersive=1.
+    // Original nav hrefs captured before we append ?immersive=1.
     // Restored on exit so navigating away from immersive mode doesn't carry
     // the param back into the normal editor.
+    var originalFirstHref = null;
     var originalPrevHref = null;
     var originalNextHref = null;
+    var originalLastHref = null;
 
     // Two-finger swipe state
     var swipeStart = null;
@@ -170,6 +174,10 @@
 
     function rewriteNavHrefs(enabling) {
         if (enabling) {
+            if (firstBtnEl) {
+                originalFirstHref = firstBtnEl.getAttribute('href');
+                firstBtnEl.setAttribute('href', appendImmersiveParam(originalFirstHref));
+            }
             if (prevBtnEl) {
                 originalPrevHref = prevBtnEl.getAttribute('href');
                 prevBtnEl.setAttribute('href', appendImmersiveParam(originalPrevHref));
@@ -178,7 +186,15 @@
                 originalNextHref = nextBtnEl.getAttribute('href');
                 nextBtnEl.setAttribute('href', appendImmersiveParam(originalNextHref));
             }
+            if (lastBtnEl) {
+                originalLastHref = lastBtnEl.getAttribute('href');
+                lastBtnEl.setAttribute('href', appendImmersiveParam(originalLastHref));
+            }
         } else {
+            if (firstBtnEl && originalFirstHref !== null) {
+                firstBtnEl.setAttribute('href', originalFirstHref);
+                originalFirstHref = null;
+            }
             if (prevBtnEl && originalPrevHref !== null) {
                 prevBtnEl.setAttribute('href', originalPrevHref);
                 originalPrevHref = null;
@@ -186,6 +202,10 @@
             if (nextBtnEl && originalNextHref !== null) {
                 nextBtnEl.setAttribute('href', originalNextHref);
                 originalNextHref = null;
+            }
+            if (lastBtnEl && originalLastHref !== null) {
+                lastBtnEl.setAttribute('href', originalLastHref);
+                originalLastHref = null;
             }
         }
     }

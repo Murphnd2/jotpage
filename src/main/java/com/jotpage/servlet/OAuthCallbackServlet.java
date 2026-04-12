@@ -23,7 +23,7 @@ import java.sql.SQLException;
 
 public class OAuthCallbackServlet extends HttpServlet {
 
-    private static final String APPLICATION_NAME = "JotPage";
+    private static final String APPLICATION_NAME = "Jyrnyl";
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)

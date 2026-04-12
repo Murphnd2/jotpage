@@ -11,6 +11,7 @@ public class Page {
     private int sortOrder;
     private String inkData;
     private String textLayers;
+    private String imageLayers;
     private boolean closed;
     private Timestamp createdAt;
     private Timestamp updatedAt;
@@ -72,6 +73,14 @@ public class Page {
 
     public void setTextLayers(String textLayers) {
         this.textLayers = textLayers;
+    }
+
+    public String getImageLayers() {
+        return imageLayers;
+    }
+
+    public void setImageLayers(String imageLayers) {
+        this.imageLayers = imageLayers;
     }
 
     public boolean isClosed() {

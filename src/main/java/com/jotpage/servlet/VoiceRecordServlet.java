@@ -103,6 +103,16 @@ public class VoiceRecordServlet extends HttpServlet {
 
         try {
             req.setAttribute("tags", tagDao.findByUserId(user.getId()));
+
+            // Pass AI trial usage per mode so the frontend can show status
+            if (!TierCheck.isPro(user)) {
+                JsonObject trialUsage = new JsonObject();
+                String[] modes = {"study_notes", "meeting_minutes", "journal_entry", "outline", "custom"};
+                for (String mode : modes) {
+                    trialUsage.addProperty(mode, aiJobDao.countByUserIdAndJobType(user.getId(), mode));
+                }
+                req.setAttribute("trialUsageJson", gson.toJson(trialUsage));
+            }
         } catch (SQLException e) {
             throw new ServletException(e);
         }
@@ -139,12 +149,20 @@ public class VoiceRecordServlet extends HttpServlet {
                 + " browserTranscriptLen="
                 + (browserTranscript == null ? 0 : browserTranscript.length()));
 
-        // Tier gate: anything beyond verbatim requires Pro.
+        // Tier gate: non-verbatim modes allowed for Pro, or 1 free trial per mode.
         if (!"verbatim".equals(jobType)) {
-            String block = TierCheck.requirePro(user, TierCheck.FEATURE_AI_PROCESSING);
-            if (block != null) {
-                writeJsonError(resp, HttpServletResponse.SC_FORBIDDEN, block);
-                return;
+            if (!isPro) {
+                try {
+                    int used = aiJobDao.countByUserIdAndJobType(user.getId(), jobType);
+                    if (used >= TierCheck.FREE_AI_TRIAL_PER_MODE) {
+                        writeJsonError(resp, HttpServletResponse.SC_FORBIDDEN,
+                                "You\u2019ve used your free trial of this mode. "
+                                        + "Upgrade to Jyrnyl Pro for unlimited AI processing.");
+                        return;
+                    }
+                } catch (SQLException e) {
+                    throw new ServletException(e);
+                }
             }
             if (claudeService == null) {
                 writeJsonError(resp, HttpServletResponse.SC_SERVICE_UNAVAILABLE,

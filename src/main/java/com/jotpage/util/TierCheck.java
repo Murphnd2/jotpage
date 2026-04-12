@@ -2,20 +2,25 @@ package com.jotpage.util;
 
 import com.jotpage.model.User;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * Pure feature/limit gatekeeper for the free/pro tier split.
  *
  * Free tier limits:
- *   - 50 pages maximum
- *   - No AI processing (Claude / LLM features)
- *   - No Whisper transcription
- *   - Only system page templates (no custom PNG templates)
+ *   - 50 pages maximum (lifetime)
+ *   - 5 custom templates maximum
+ *   - 1 AI processing trial per mode
+ *   - No page deletion
+ *   - No export/download
+ *   - Verbatim voice transcription is free
  *
  * Pro tier: everything unlimited.
  *
- * This class intentionally has no database access — callers pass the already
- * loaded User and we inspect the tier string. Usage limits (page count,
- * monthly caps) are enforced at the servlet layer using UsageDao.
+ * A comma-separated {@code pro.emails} property in jotpage.properties
+ * overrides the database tier for listed email addresses.
  */
 public final class TierCheck {
 
@@ -23,32 +28,51 @@ public final class TierCheck {
     public static final String FEATURE_AI_PROCESSING = "ai_processing";
     public static final String FEATURE_CUSTOM_TEMPLATES = "custom_templates";
     public static final String FEATURE_UNLIMITED_PAGES = "unlimited_pages";
+    public static final String FEATURE_DELETE = "delete_page";
+    public static final String FEATURE_EXPORT = "export";
 
     public static final int FREE_PAGE_LIMIT = 50;
+    public static final int FREE_CUSTOM_TEMPLATE_LIMIT = 5;
+    public static final int FREE_AI_TRIAL_PER_MODE = 1;
+
+    private static volatile Set<String> proEmails;
 
     private TierCheck() {
     }
 
     public static boolean isPro(User user) {
-        return user != null && "pro".equalsIgnoreCase(user.getTier());
+        if (user == null) return false;
+        if ("pro".equalsIgnoreCase(user.getTier())) return true;
+        // Check properties-file whitelist
+        return user.getEmail() != null
+                && getProEmails().contains(user.getEmail().toLowerCase());
+    }
+
+    private static Set<String> getProEmails() {
+        if (proEmails != null) return proEmails;
+        String raw = AppConfig.get("pro.emails", "");
+        Set<String> set = new HashSet<>();
+        for (String e : raw.split(",")) {
+            String trimmed = e.trim().toLowerCase();
+            if (!trimmed.isEmpty()) set.add(trimmed);
+        }
+        proEmails = Collections.unmodifiableSet(set);
+        return proEmails;
     }
 
     public static boolean isFeatureAllowed(User user, String feature) {
         if (user == null || feature == null) return false;
-        // Pro gets everything.
         if (isPro(user)) return true;
 
-        // Free tier explicit allow list — currently empty, all Pro-exclusive
-        // features return false. Listed here for clarity.
         switch (feature) {
             case FEATURE_WHISPER:
             case FEATURE_AI_PROCESSING:
             case FEATURE_CUSTOM_TEMPLATES:
             case FEATURE_UNLIMITED_PAGES:
+            case FEATURE_DELETE:
+            case FEATURE_EXPORT:
                 return false;
             default:
-                // Unknown feature — default to allow so future free-tier
-                // additions don't accidentally get blocked by a typo.
                 return true;
         }
     }
@@ -65,16 +89,21 @@ public final class TierCheck {
         if (isFeatureAllowed(user, feature)) return null;
         switch (feature) {
             case FEATURE_WHISPER:
-                return "Audio transcription is a Pro feature. Upgrade to transcribe recordings.";
+                return "Audio transcription is a Jyrnyl Pro feature. Upgrade to transcribe recordings.";
             case FEATURE_AI_PROCESSING:
-                return "AI processing is a Pro feature. Upgrade to run notes through the AI pipeline.";
+                return "You\u2019ve used your free trial of this mode. Upgrade to Jyrnyl Pro for unlimited use.";
             case FEATURE_CUSTOM_TEMPLATES:
-                return "Custom templates are a Pro feature. Upgrade to upload your own backgrounds.";
+                return "You\u2019ve reached the " + FREE_CUSTOM_TEMPLATE_LIMIT
+                        + "-template limit on the free tier. Upgrade to Jyrnyl Pro for unlimited templates.";
             case FEATURE_UNLIMITED_PAGES:
-                return "You've reached the " + FREE_PAGE_LIMIT
-                        + "-page limit on the free tier. Upgrade to Pro for unlimited pages.";
+                return "You\u2019ve reached the " + FREE_PAGE_LIMIT
+                        + "-page limit on the free tier. Upgrade to Jyrnyl Pro for unlimited pages.";
+            case FEATURE_DELETE:
+                return "Page deletion is a Jyrnyl Pro feature. Upgrade to delete pages.";
+            case FEATURE_EXPORT:
+                return "Export is a Jyrnyl Pro feature. Upgrade to download your pages.";
             default:
-                return "This feature is only available on Pro. Upgrade to unlock it.";
+                return "This feature is only available on Jyrnyl Pro.";
         }
     }
 }

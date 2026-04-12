@@ -1,5 +1,5 @@
 /*
- * JotPage — book view
+ * Jyrnyl — book view
  *
  * Renders the user's notebook as a two-page spread you can flip through.
  * Ink data for each page is lazy-fetched via /app/api/page-thumbnail/{id}
@@ -28,8 +28,10 @@
     var bookEl = document.getElementById('book');
     var leftPageEl = document.getElementById('bookLeftPage');
     var rightPageEl = document.getElementById('bookRightPage');
+    var firstBtn = document.getElementById('bookFirst');
     var prevBtn = document.getElementById('bookPrev');
     var nextBtn = document.getElementById('bookNext');
+    var lastBtn = document.getElementById('bookLast');
     var statusEl = document.getElementById('bookStatus');
     var stageEl = document.getElementById('bookStage');
 
@@ -151,13 +153,13 @@
         pageEl.className = 'book-page ' + side + ' cover-page';
         var title = document.createElement('div');
         title.className = 'cover-title';
-        title.textContent = 'My Journal';
+        title.textContent = 'My Jyrnyl';
         var flourish = document.createElement('div');
         flourish.className = 'cover-flourish';
         flourish.textContent = '\u2756 \u2756 \u2756';
         var subtitle = document.createElement('div');
         subtitle.className = 'cover-subtitle';
-        subtitle.textContent = 'A quiet place for your pages';
+        subtitle.textContent = 'Drop the needle on a new thought';
         pageEl.appendChild(title);
         pageEl.appendChild(flourish);
         pageEl.appendChild(subtitle);
@@ -193,7 +195,7 @@
 
         var hint = document.createElement('div');
         hint.className = 'add-page-hint';
-        hint.textContent = 'Begin a fresh entry';
+        hint.textContent = 'Drop a new track';
 
         inner.appendChild(plus);
         inner.appendChild(label);
@@ -345,6 +347,23 @@
             // Custom bg async re-paint
             drawThumbnail(canvas, data);
         });
+        // Image overlays (beneath strokes)
+        if (Array.isArray(data.imageLayers)) {
+            data.imageLayers.forEach(function (il) {
+                if (!il.src) return;
+                var key = il.id || il.src.substr(0, 60);
+                if (!imageCache[key]) {
+                    var img = new Image();
+                    img.onload = function () { drawThumbnail(canvas, data); };
+                    img.src = il.src;
+                    imageCache[key] = img;
+                }
+                var cached = imageCache[key];
+                if (cached.complete && cached.naturalWidth > 0) {
+                    c.drawImage(cached, il.x, il.y, il.width, il.height);
+                }
+            });
+        }
         // Strokes
         var ink = data.inkData;
         if (ink && Array.isArray(ink.strokes)) {
@@ -384,7 +403,7 @@
 
                 var color = (typeof tb.color === 'string' && tb.color)
                         ? tb.color
-                        : '#3b2f2f';
+                        : '#2e2420';
 
                 var rawText = (tb.text == null ? '' : String(tb.text))
                         .replace(/\r/g, '');
@@ -641,8 +660,10 @@
 
     function updateNavAndStatus() {
         var total = spreadCount();
+        if (firstBtn) firstBtn.disabled = (currentSpread <= 0);
         if (prevBtn) prevBtn.disabled = (currentSpread <= 0);
         if (nextBtn) nextBtn.disabled = (currentSpread >= total - 1);
+        if (lastBtn) lastBtn.disabled = (currentSpread >= total - 1);
         if (!statusEl) return;
 
         if (currentSpread === 0) {
@@ -693,6 +714,12 @@
     // ------------------------------------------------------------------
     // Navigation
     // ------------------------------------------------------------------
+    function goFirst() {
+        if (currentSpread > 0) {
+            currentSpread = 0;
+            renderCurrentSpread();
+        }
+    }
     function goPrev() {
         if (currentSpread > 0) {
             currentSpread--;
@@ -705,17 +732,28 @@
             renderCurrentSpread();
         }
     }
+    function goLast() {
+        var last = spreadCount() - 1;
+        if (currentSpread < last) {
+            currentSpread = last;
+            renderCurrentSpread();
+        }
+    }
 
+    if (firstBtn) firstBtn.addEventListener('click', goFirst);
     if (prevBtn) prevBtn.addEventListener('click', goPrev);
     if (nextBtn) nextBtn.addEventListener('click', goNext);
+    if (lastBtn) lastBtn.addEventListener('click', goLast);
 
     document.addEventListener('keydown', function (e) {
         if (window.JOTPAGE_VIEW_MODE !== 'book') return;
         // Don't hijack arrows when the user is typing in an input
         var tag = (e.target && e.target.tagName) || '';
         if (tag === 'INPUT' || tag === 'TEXTAREA') return;
-        if (e.key === 'ArrowLeft') { goPrev(); e.preventDefault(); }
+        if (e.key === 'Home') { goFirst(); e.preventDefault(); }
+        else if (e.key === 'ArrowLeft') { goPrev(); e.preventDefault(); }
         else if (e.key === 'ArrowRight') { goNext(); e.preventDefault(); }
+        else if (e.key === 'End') { goLast(); e.preventDefault(); }
     });
 
     // Touch swipe

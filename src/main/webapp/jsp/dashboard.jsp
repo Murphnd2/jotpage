@@ -5,18 +5,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JotPage &mdash; Notebook</title>
+    <title>Jyrnyl</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <link href="${pageContext.request.contextPath}/css/theme.css" rel="stylesheet">
     <style>
         body {
             background:
-                radial-gradient(circle at 15% 10%, rgba(201,168,76,0.06), transparent 40%),
-                radial-gradient(circle at 90% 90%, rgba(124,50,56,0.04), transparent 45%),
+                radial-gradient(circle at 15% 10%, rgba(212,148,58,0.06), transparent 40%),
+                radial-gradient(circle at 90% 90%, rgba(160,82,45,0.04), transparent 45%),
                 var(--bg-cream);
         }
         .notebook-header h1 {
@@ -138,6 +138,34 @@
             font-style: italic;
         }
 
+        /* Delete button — appears on hover */
+        .page-entry .delete-page-btn {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            cursor: pointer;
+            transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+            z-index: 2;
+        }
+        .page-entry:hover .delete-page-btn { opacity: 0.6; }
+        body.tier-free .delete-page-btn { display: none !important; }
+        .page-entry .delete-page-btn:hover {
+            opacity: 1;
+            background: rgba(160,82,45,0.12);
+            color: var(--accent-burgundy);
+        }
+
         /* Thumbnail — mini page with a "tape" corner for tactility */
         .page-thumb {
             flex: 0 0 auto;
@@ -149,8 +177,8 @@
             position: relative;
             overflow: hidden;
             box-shadow:
-                0 1px 0 rgba(92,64,51,0.04),
-                1px 2px 5px rgba(92,64,51,0.10);
+                0 1px 0 rgba(74,55,40,0.04),
+                1px 2px 5px rgba(74,55,40,0.10);
             transform: rotate(-1.2deg);
         }
         .page-thumb::after {
@@ -161,8 +189,8 @@
             left: 50%;
             width: 28px;
             height: 10px;
-            background: rgba(201,168,76,0.28);
-            border: 1px solid rgba(201,168,76,0.35);
+            background: rgba(212,148,58,0.28);
+            border: 1px solid rgba(212,148,58,0.35);
             transform: translateX(-50%) rotate(-4deg);
             border-radius: 1px;
         }
@@ -171,7 +199,7 @@
                 to bottom, #fffdf7 0, #fffdf7 10px, #d9c9a8 10px, #d9c9a8 11px);
         }
         .page-thumb.bg-dot_grid {
-            background-image: radial-gradient(#c9b892 1px, transparent 1.5px);
+            background-image: radial-gradient(#c4b088 1px, transparent 1.5px);
             background-size: 10px 10px;
         }
         .page-thumb.bg-graph {
@@ -186,22 +214,22 @@
             position: absolute;
             inset: 8px 6px 6px 6px;
             background-image: repeating-linear-gradient(
-                to bottom, #fffdf7 0, #fffdf7 12px, #c9b892 12px, #c9b892 13px);
+                to bottom, #fffdf7 0, #fffdf7 12px, #c4b088 12px, #c4b088 13px);
         }
         .page-thumb.bg-monthly_calendar::before {
             content: "";
             position: absolute;
             inset: 8px 6px 6px 6px;
             background-image:
-                linear-gradient(to right, #c9b892 1px, transparent 1px),
-                linear-gradient(to bottom, #c9b892 1px, transparent 1px);
+                linear-gradient(to right, #c4b088 1px, transparent 1px),
+                linear-gradient(to bottom, #c4b088 1px, transparent 1px);
             background-size: 9px 14px;
         }
         .page-thumb .closed-badge {
             position: absolute;
             bottom: 2px;
             right: 2px;
-            background: rgba(92,64,51,0.85);
+            background: rgba(74,55,40,0.85);
             color: #fff;
             font-size: 0.55rem;
             padding: 1px 4px;
@@ -220,7 +248,7 @@
         }
         body.reorder-mode .page-entry.drag-over {
             border-color: var(--accent-gold);
-            background: rgba(201,168,76,0.12);
+            background: rgba(212,148,58,0.12);
         }
         body.reorder-mode .page-entry.dragging {
             opacity: 0.45;
@@ -237,20 +265,137 @@
             font-size: 0.9rem;
         }
 
-        /* Delete (X) button that appears on hover over a custom template row */
-        .list-group-item .delete-template-btn {
+        /* Template grid — 3 compact cards per row */
+        .template-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+        @media (max-width: 400px) {
+            .template-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        .template-card {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 14px 10px;
+            border: 1px solid var(--border-warm);
+            border-radius: var(--radius-md);
+            background: var(--bg-card);
+            cursor: pointer;
+            text-decoration: none;
+            color: var(--accent-brown);
+            font-family: var(--font-serif);
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+            position: relative;
+            min-height: 56px;
+            overflow: hidden;
+            word-break: break-word;
+            line-height: 1.25;
+        }
+        .template-card:hover {
+            background: var(--bg-cream-dark);
+            border-color: var(--accent-gold);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            color: var(--accent-brown);
+        }
+        .template-card.dragging { opacity: 0.4; }
+        .template-card.drag-over {
+            border-color: var(--accent-gold);
+            background: rgba(196,164,105,0.12);
+        }
+        .template-card .delete-template-btn {
+            position: absolute;
+            top: 2px;
+            right: 4px;
             background: transparent;
             border: 0;
             color: var(--text-muted);
-            padding: 2px 8px;
+            font-size: 0.75rem;
+            padding: 2px 5px;
             border-radius: var(--radius-sm);
-            opacity: 0.6;
+            opacity: 0;
             transition: opacity 0.15s ease, color 0.15s ease, background 0.15s ease;
+            cursor: pointer;
         }
-        .list-group-item .delete-template-btn:hover {
+        .template-card:hover .delete-template-btn { opacity: 0.6; }
+        .template-card .delete-template-btn:hover {
             opacity: 1;
             color: var(--accent-burgundy);
             background: rgba(124, 50, 56, 0.08);
+        }
+        /* Tag management rows */
+        .tag-manage-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 8px;
+            border: 1px solid var(--border-warm);
+            border-radius: var(--radius-md);
+            background: var(--bg-card);
+        }
+        .tag-manage-row .tag-color-input {
+            width: 28px;
+            height: 28px;
+            padding: 0;
+            border: 1px solid var(--border-warm-strong);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+        }
+        .tag-manage-row .tag-name-input {
+            flex: 1;
+            border: 1px solid transparent;
+            background: transparent;
+            font-size: 0.9rem;
+            padding: 2px 6px;
+            border-radius: var(--radius-sm);
+            color: var(--text-dark);
+        }
+        .tag-manage-row .tag-name-input:focus {
+            border-color: var(--border-warm-strong);
+            background: var(--bg-card-raised);
+            outline: none;
+        }
+        .tag-manage-row .tag-page-count {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+        .tag-manage-row .tag-save-btn {
+            display: none;
+            font-size: 0.75rem;
+        }
+        .tag-manage-row.dirty .tag-save-btn { display: inline-block; }
+        .tag-manage-row .tag-delete-btn {
+            background: transparent;
+            border: 0;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            padding: 2px 6px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            opacity: 0.5;
+            transition: opacity 0.15s ease, color 0.15s ease;
+        }
+        .tag-manage-row .tag-delete-btn:hover {
+            opacity: 1;
+            color: var(--accent-burgundy);
+        }
+
+        .template-card-voice {
+            border-style: dashed;
+            gap: 6px;
+        }
+        .template-card .lock-icon {
+            position: absolute;
+            bottom: 3px;
+            right: 5px;
+            font-size: 0.7rem;
+            opacity: 0.45;
+            color: var(--accent-brown);
         }
 
         /* Custom template creation form inside the modal */
@@ -408,12 +553,12 @@
         /* -------------------------------------------------------------- */
         .book-stage {
             background:
-                radial-gradient(circle at 50% 40%, #6b4a30 0%, #4a3221 60%, #2f1f13 100%);
+                radial-gradient(circle at 50% 40%, #5a3d28 0%, #3e2a1a 60%, #281a0e 100%);
             border-radius: var(--radius-lg);
             padding: 40px 24px;
             box-shadow:
                 inset 0 2px 12px rgba(0,0,0,0.4),
-                0 2px 8px rgba(92,64,51,0.15);
+                0 2px 8px rgba(74,55,40,0.15);
             position: relative;
             overflow: hidden;
             min-height: 560px;
@@ -486,13 +631,13 @@
         .book-page.left-page {
             border-radius: 4px 0 0 4px;
             box-shadow:
-                inset -10px 0 20px -10px rgba(92,64,51,0.25),
+                inset -10px 0 20px -10px rgba(74,55,40,0.25),
                 inset 2px 2px 4px rgba(255,255,255,0.5);
         }
         .book-page.right-page {
             border-radius: 0 4px 4px 0;
             box-shadow:
-                inset 10px 0 20px -10px rgba(92,64,51,0.25),
+                inset 10px 0 20px -10px rgba(74,55,40,0.25),
                 inset -2px 2px 4px rgba(255,255,255,0.5);
         }
         .book-page.blank-page {
@@ -502,7 +647,7 @@
             content: "";
             position: absolute;
             inset: 20% 30%;
-            border: 1px dashed rgba(201,168,76,0.25);
+            border: 1px dashed rgba(212,148,58,0.25);
             border-radius: 2px;
         }
 
@@ -512,7 +657,7 @@
                 repeating-linear-gradient(
                     to bottom,
                     #fffaf0 0, #fffaf0 18px,
-                    rgba(201,168,76,0.05) 18px, rgba(201,168,76,0.05) 19px
+                    rgba(212,148,58,0.05) 18px, rgba(212,148,58,0.05) 19px
                 );
             cursor: pointer;
             justify-content: center;
@@ -525,20 +670,20 @@
                 repeating-linear-gradient(
                     to bottom,
                     #fffdf7 0, #fffdf7 18px,
-                    rgba(201,168,76,0.10) 18px, rgba(201,168,76,0.10) 19px
+                    rgba(212,148,58,0.10) 18px, rgba(212,148,58,0.10) 19px
                 );
         }
         .book-page.add-page::before {
             content: "";
             position: absolute;
             inset: 26px;
-            border: 2px dashed rgba(92,64,51,0.28);
+            border: 2px dashed rgba(74,55,40,0.28);
             border-radius: 4px;
             pointer-events: none;
             transition: border-color 0.15s ease;
         }
         .book-page.add-page:hover::before {
-            border-color: rgba(92,64,51,0.45);
+            border-color: rgba(74,55,40,0.45);
         }
         .book-page.add-page .add-page-inner {
             position: relative;
@@ -549,8 +694,8 @@
             width: 84px;
             height: 84px;
             border-radius: 50%;
-            background: rgba(92,64,51,0.06);
-            border: 2px solid rgba(92,64,51,0.30);
+            background: rgba(74,55,40,0.06);
+            border: 2px solid rgba(74,55,40,0.30);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -560,7 +705,7 @@
             transition: background 0.15s ease, transform 0.1s ease;
         }
         .book-page.add-page:hover .add-page-plus {
-            background: rgba(92,64,51,0.12);
+            background: rgba(74,55,40,0.12);
             transform: scale(1.04);
         }
         .book-page.add-page .add-page-label {
@@ -585,9 +730,9 @@
             width: 4px;
             transform: translateX(-50%);
             background: linear-gradient(to right,
-                rgba(92,64,51,0.35),
+                rgba(74,55,40,0.35),
                 rgba(0,0,0,0.5),
-                rgba(92,64,51,0.35));
+                rgba(74,55,40,0.35));
             pointer-events: none;
             z-index: 2;
             box-shadow: 0 0 4px rgba(0,0,0,0.25);
@@ -638,14 +783,14 @@
             content: "";
             position: absolute;
             inset: 0;
-            background: rgba(92,64,51,0.06);
+            background: rgba(74,55,40,0.06);
             pointer-events: none;
         }
 
         /* Cover */
         .book-page.cover-page {
             background:
-                radial-gradient(circle at 30% 20%, #8b5a3c 0%, #5c3a22 60%, #3e2716 100%);
+                radial-gradient(circle at 30% 20%, #7a4e30 0%, #4a3728 60%, #332518 100%);
             color: #f0d8a8;
             justify-content: center;
             align-items: center;
@@ -660,7 +805,7 @@
             content: "";
             position: absolute;
             inset: 22px;
-            border: 2px double rgba(201,168,76,0.7);
+            border: 2px double rgba(212,148,58,0.7);
             border-radius: 2px;
             pointer-events: none;
         }
@@ -675,7 +820,7 @@
             margin-bottom: 12px;
         }
         .book-page.cover-page .cover-flourish {
-            color: rgba(201,168,76,0.7);
+            color: rgba(212,148,58,0.7);
             font-size: 1.4rem;
             letter-spacing: 0.4em;
         }
@@ -694,7 +839,7 @@
             min-height: 52px;
             border-radius: 50%;
             background: rgba(255,253,247,0.9);
-            border: 1px solid rgba(92,64,51,0.3);
+            border: 1px solid rgba(74,55,40,0.3);
             color: var(--accent-brown);
             font-size: 1.5rem;
             display: inline-flex;
@@ -759,10 +904,10 @@
         }
     </style>
 </head>
-<body>
+<body class="${isPro ? 'tier-pro' : 'tier-free'}">
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <div class="container">
-            <a class="navbar-brand" href="${pageContext.request.contextPath}/app/dashboard">JotPage</a>
+            <a class="navbar-brand" href="${pageContext.request.contextPath}/app/dashboard">Jyrnyl</a>
             <div class="d-flex align-items-center ms-auto">
                 <img src="${sessionScope.user.avatarUrl}"
                      alt="Avatar"
@@ -778,8 +923,11 @@
     <main class="container py-5">
         <div class="notebook-header d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
             <div>
-                <h1 class="mb-0">My Notebook</h1>
-                <div class="subhead">A quiet place for your pages</div>
+                <h1 class="mb-0">My Jyrnyl</h1>
+                <div class="subhead">Drop the needle on a new thought</div>
+                <c:if test="${!isPro}">
+                    <div class="text-muted small mt-1">${pageCount} / ${pageLimit} pages</div>
+                </c:if>
             </div>
             <div class="d-flex gap-2 align-items-center flex-wrap">
                 <div class="view-toggle" role="group" aria-label="View mode">
@@ -799,10 +947,6 @@
                         <i class="bi bi-arrows-move"></i> Reorder
                     </button>
                 </c:if>
-                <a href="${pageContext.request.contextPath}/app/voice-record"
-                   class="btn btn-outline-primary">
-                    <i class="bi bi-mic-fill"></i> Voice Entry
-                </a>
                 <button type="button" class="btn btn-primary"
                         data-bs-toggle="modal" data-bs-target="#newPageModal">
                     <i class="bi bi-plus-lg"></i> New Page
@@ -820,6 +964,10 @@
                     </span>
                 </c:forEach>
                 <button type="button" id="clearTagFilter" class="btn btn-link btn-sm text-muted">Clear</button>
+                <button type="button" id="manageTagsBtn" class="btn btn-link btn-sm text-muted"
+                        data-bs-toggle="modal" data-bs-target="#manageTagsModal">
+                    <i class="bi bi-gear-fill"></i> Manage
+                </button>
                 <span id="filterStatus" class="text-muted small ms-2"></span>
             </div>
         </c:if>
@@ -827,6 +975,9 @@
         <c:if test="${viewMode == 'book'}">
             <div class="book-stage" id="bookStage">
                 <div class="book-shell">
+                    <button type="button" id="bookFirst" class="book-nav-btn" title="First page">
+                        <i class="bi bi-chevron-double-left"></i>
+                    </button>
                     <button type="button" id="bookPrev" class="book-nav-btn" title="Previous">
                         <i class="bi bi-chevron-left"></i>
                     </button>
@@ -838,6 +989,9 @@
                     <button type="button" id="bookNext" class="book-nav-btn" title="Next">
                         <i class="bi bi-chevron-right"></i>
                     </button>
+                    <button type="button" id="bookLast" class="book-nav-btn" title="Last page">
+                        <i class="bi bi-chevron-double-right"></i>
+                    </button>
                 </div>
                 <div class="book-status" id="bookStatus">&nbsp;</div>
             </div>
@@ -846,17 +1000,24 @@
         <c:if test="${viewMode == 'list'}">
         <c:choose>
             <c:when test="${empty pages}">
-                <div class="text-muted">No pages yet. Start your notebook with the New Page button.</div>
+                <div class="text-muted">No pages yet. Drop your first track with the New Page button.</div>
             </c:when>
             <c:otherwise>
                 <div id="pageList" class="notebook-list">
                     <c:forEach var="p" items="${pages}" varStatus="s">
                         <a class="page-entry"
                            data-page-id="${p.id}"
+                           data-locked="${p.locked}"
                            data-tag-ids="<c:forEach var='tid' items='${p.tagIds}' varStatus='ts'>${tid}<c:if test='${not ts.last}'>,</c:if></c:forEach>"
                            data-base-href="${pageContext.request.contextPath}/app/page/${p.id}"
                            draggable="false"
                            href="${pageContext.request.contextPath}/app/page/${p.id}">
+                            <button type="button" class="delete-page-btn"
+                                    title="Delete page"
+                                    data-page-id="${p.id}"
+                                    data-locked="${p.locked}">
+                                <i class="bi bi-trash3"></i>
+                            </button>
                             <div class="page-thumb bg-${p.backgroundType}">
                                 <c:if test="${p.closed}">
                                     <span class="closed-badge">Closed</span>
@@ -897,12 +1058,16 @@
                         <span id="templateAlertMsg"></span>
                     </div>
 
-                    <div id="pageTypesList" class="list-group">
+                    <div id="pageTypesList" class="template-grid">
                         <div class="text-muted small">Loading templates...</div>
                     </div>
 
                     <div class="custom-template-section">
-                        <h6>Create a custom template</h6>
+                        <h6>Create a custom template
+                            <c:if test="${!isPro}">
+                                <span class="text-muted small" style="font-weight:400">(${customTemplateCount} / ${customTemplateLimit})</span>
+                            </c:if>
+                        </h6>
                         <div class="hint">Upload a PNG to use as the page background.</div>
 
                         <form id="customTemplateForm" novalidate>
@@ -916,7 +1081,7 @@
                             </div>
 
                             <div class="mb-2">
-                                <label>Background image (PNG, max 5&nbsp;MB)</label>
+                                <label>Background image (PNG, max 5&nbsp;MB, 1480&times;2100&nbsp;px recommended)</label>
                                 <div class="drop-zone" id="ct-drop-zone">
                                     <div class="drop-zone-label" id="ct-drop-label">
                                         Click to choose a PNG file
@@ -949,11 +1114,103 @@
         </div>
     </div>
 
+    <!-- Delete page confirmation modal -->
+    <div class="modal fade" id="deletePageModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Delete page?</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="deletePageMsg">This page will be permanently deleted.</p>
+                    <div id="deleteLockedWrap" style="display:none">
+                        <p class="text-danger small mb-2">
+                            This page is locked. Type <strong>DELETE</strong> to confirm.
+                        </p>
+                        <input type="text" id="deleteConfirmInput" class="form-control form-control-sm"
+                               placeholder="Type DELETE" autocomplete="off">
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" autofocus>No, keep it</button>
+                    <button type="button" class="btn btn-danger" id="deletePageConfirmBtn" disabled>Yes, delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Tag management modal -->
+    <div class="modal fade" id="manageTagsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Manage Tags</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="tagManageList" class="d-flex flex-column gap-2">
+                        <div class="text-muted small">Loading...</div>
+                    </div>
+                    <!-- Delete in-use tag sub-dialog (hidden by default) -->
+                    <div id="tagDeleteInUse" class="mt-3 p-3 border rounded" style="display:none; background: var(--bg-cream-dark);">
+                        <p class="small mb-2">
+                            <strong id="tagDeleteName"></strong> is used on
+                            <strong id="tagDeleteCount"></strong> pages.
+                        </p>
+                        <div class="d-flex flex-column gap-2">
+                            <button type="button" id="tagDeleteStrip" class="btn btn-outline-secondary btn-sm">
+                                Remove from all pages &amp; delete
+                            </button>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="small text-muted">Replace with:</span>
+                                <select id="tagReplaceSelect" class="form-select form-select-sm" style="max-width:180px"></select>
+                                <button type="button" id="tagDeleteReplace" class="btn btn-primary btn-sm">Replace &amp; delete</button>
+                            </div>
+                            <button type="button" id="tagDeleteCancel" class="btn btn-link btn-sm text-muted p-0">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upgrade modal -->
+    <div class="modal fade" id="upgradeModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Jyrnyl Pro</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="upgradeMsg">Upgrade to Jyrnyl Pro to unlock this feature.</p>
+                    <ul class="small text-muted mb-0">
+                        <li>Unlimited pages</li>
+                        <li>Unlimited custom templates</li>
+                        <li>Unlimited AI voice processing</li>
+                        <li>Page deletion</li>
+                        <li>Export &amp; download</li>
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Maybe later</button>
+                    <button type="button" class="btn btn-primary" disabled>Coming soon</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         window.CONTEXT_PATH = '${pageContext.request.contextPath}';
         window.JOTPAGE_VIEW_MODE = '${viewMode}';
         window.BOOK_PAGES = ${pagesJson};
+        window.IS_PRO = ${isPro};
+        window.PAGE_COUNT = ${pageCount};
+        window.PAGE_LIMIT = ${pageLimit};
+        window.CUSTOM_TEMPLATE_COUNT = ${customTemplateCount};
+        window.CUSTOM_TEMPLATE_LIMIT = ${customTemplateLimit};
     </script>
     <c:if test="${viewMode == 'book'}">
         <script src="${pageContext.request.contextPath}/js/book-view.js"></script>
@@ -961,6 +1218,24 @@
     <script>
         (function () {
             var ctx = '${pageContext.request.contextPath}';
+            var isPro = window.IS_PRO;
+
+            // Show upgrade modal with a message
+            function showUpgrade(msg) {
+                var el = document.getElementById('upgradeModal');
+                if (!el) return;
+                document.getElementById('upgradeMsg').textContent = msg || 'Upgrade to Jyrnyl Pro to unlock this feature.';
+                new bootstrap.Modal(el).show();
+            }
+
+            // Handle ?error=page_limit redirect
+            var errorParam = '${errorParam}';
+            if (errorParam === 'page_limit') {
+                showUpgrade('You\u2019ve reached the ' + window.PAGE_LIMIT + '-page limit. Upgrade to Jyrnyl Pro for unlimited pages.');
+                // Clean URL
+                history.replaceState(null, '', location.pathname + location.search.replace(/[?&]error=page_limit/, ''));
+            }
+
             var modal = document.getElementById('newPageModal');
             var listEl = document.getElementById('pageTypesList');
             var templatesLoaded = false;
@@ -980,6 +1255,9 @@
             if (alertClose) alertClose.addEventListener('click', hideTemplateAlert);
             modal.addEventListener('hidden.bs.modal', hideTemplateAlert);
 
+            // ----- Template grid rendering -----
+            var draggingCard = null;
+
             function renderTemplates(types) {
                 listEl.innerHTML = '';
                 if (!types || types.length === 0) {
@@ -987,25 +1265,26 @@
                     return;
                 }
                 types.forEach(function (t) {
-                    var row = document.createElement('div');
-                    row.className = 'list-group-item d-flex justify-content-between align-items-center';
+                    var card = document.createElement('a');
+                    card.className = 'template-card';
+                    card.href = ctx + '/app/page/new?typeId=' + t.id;
+                    card.setAttribute('data-type-id', t.id);
+                    card.draggable = true;
 
-                    var link = document.createElement('a');
-                    link.className = 'flex-grow-1 text-decoration-none text-reset';
-                    link.href = ctx + '/app/page/new?typeId=' + t.id;
-                    link.innerHTML =
-                        '<strong>' + escapeHtml(t.name) + '</strong>' +
-                        '<br><small class="text-muted">' + escapeHtml(t.backgroundType) + '</small>';
-                    row.appendChild(link);
+                    // Name label
+                    var label = document.createElement('span');
+                    label.textContent = t.name;
+                    card.appendChild(label);
 
+                    // Lock icon for immutable templates
                     if (t.immutableOnClose) {
-                        var badge = document.createElement('span');
-                        badge.className = 'badge bg-warning text-dark me-2';
-                        badge.textContent = 'Locks on close';
-                        row.appendChild(badge);
+                        var lock = document.createElement('i');
+                        lock.className = 'bi bi-lock-fill lock-icon';
+                        lock.title = 'Locks on close';
+                        card.appendChild(lock);
                     }
 
-                    // Delete button for user-owned templates only (never system)
+                    // Delete button for user-owned templates only
                     if (t.system === false && t.userId != null) {
                         var del = document.createElement('button');
                         del.type = 'button';
@@ -1039,10 +1318,73 @@
                                 showTemplateAlert('Network error: ' + err.message);
                             });
                         });
-                        row.appendChild(del);
+                        card.appendChild(del);
                     }
 
-                    listEl.appendChild(row);
+                    // Drag-and-drop handlers
+                    card.addEventListener('dragstart', function (e) {
+                        draggingCard = card;
+                        card.classList.add('dragging');
+                        if (e.dataTransfer) {
+                            e.dataTransfer.effectAllowed = 'move';
+                            e.dataTransfer.setData('text/plain', t.id);
+                        }
+                    });
+                    card.addEventListener('dragend', function () {
+                        if (draggingCard) draggingCard.classList.remove('dragging');
+                        draggingCard = null;
+                        listEl.querySelectorAll('.template-card').forEach(function (c) {
+                            c.classList.remove('drag-over');
+                        });
+                    });
+                    card.addEventListener('dragover', function (e) {
+                        if (!draggingCard || card === draggingCard) return;
+                        e.preventDefault();
+                        if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+                        card.classList.add('drag-over');
+                    });
+                    card.addEventListener('dragleave', function () {
+                        card.classList.remove('drag-over');
+                    });
+                    card.addEventListener('drop', function (e) {
+                        if (!draggingCard || card === draggingCard) return;
+                        e.preventDefault();
+                        card.classList.remove('drag-over');
+                        // Determine if we should insert before or after
+                        var rect = card.getBoundingClientRect();
+                        var midX = rect.left + rect.width / 2;
+                        if (e.clientX > midX) {
+                            listEl.insertBefore(draggingCard, card.nextSibling);
+                        } else {
+                            listEl.insertBefore(draggingCard, card);
+                        }
+                        persistTemplateOrder();
+                    });
+
+                    listEl.appendChild(card);
+                });
+
+                // Fixed "Voice" utility card — always last, not draggable
+                var voice = document.createElement('a');
+                voice.className = 'template-card template-card-voice';
+                voice.href = ctx + '/app/voice-record';
+                voice.draggable = false;
+                voice.innerHTML = '<i class="bi bi-mic-fill"></i> Voice';
+                listEl.appendChild(voice);
+            }
+
+            function persistTemplateOrder() {
+                var ids = Array.prototype.map.call(
+                    listEl.querySelectorAll('.template-card'),
+                    function (el) { return parseInt(el.getAttribute('data-type-id'), 10); }
+                );
+                fetch(ctx + '/app/api/pagetypes/reorder', {
+                    method: 'PUT',
+                    credentials: 'same-origin',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ typeIds: ids })
+                }).catch(function (err) {
+                    console.error('[dashboard] template reorder failed', err);
                 });
             }
 
@@ -1380,6 +1722,251 @@
                     body: JSON.stringify({ pageIds: ids })
                 }).catch(function (err) {
                     console.error('[dashboard] reorder failed', err);
+                });
+            }
+
+            // ------------------------------------------------------------------
+            // Tag management
+            // ------------------------------------------------------------------
+            var tagManageList = document.getElementById('tagManageList');
+            var tagManageModal = document.getElementById('manageTagsModal');
+            var tagDeleteInUse = document.getElementById('tagDeleteInUse');
+            var tagDeleteName = document.getElementById('tagDeleteName');
+            var tagDeleteCount = document.getElementById('tagDeleteCount');
+            var tagReplaceSelect = document.getElementById('tagReplaceSelect');
+            var tagDeleteStripBtn = document.getElementById('tagDeleteStrip');
+            var tagDeleteReplaceBtn = document.getElementById('tagDeleteReplace');
+            var tagDeleteCancelBtn = document.getElementById('tagDeleteCancel');
+            var pendingDeleteTagId = null;
+            var managedTags = [];
+
+            function loadManagedTags() {
+                fetch(ctx + '/app/api/tags', { credentials: 'same-origin' })
+                    .then(function (r) { return r.json(); })
+                    .then(function (tags) {
+                        managedTags = tags;
+                        renderManagedTags(tags);
+                    })
+                    .catch(function () {
+                        tagManageList.innerHTML = '<div class="text-danger small">Failed to load tags.</div>';
+                    });
+            }
+
+            function renderManagedTags(tags) {
+                tagManageList.innerHTML = '';
+                tagDeleteInUse.style.display = 'none';
+                pendingDeleteTagId = null;
+                if (!tags || tags.length === 0) {
+                    tagManageList.innerHTML = '<div class="text-muted small">No tags yet.</div>';
+                    return;
+                }
+                tags.forEach(function (t) {
+                    var row = document.createElement('div');
+                    row.className = 'tag-manage-row';
+                    row.setAttribute('data-tag-id', t.id);
+
+                    var colorInput = document.createElement('input');
+                    colorInput.type = 'color';
+                    colorInput.className = 'tag-color-input';
+                    colorInput.value = t.color || '#6c757d';
+                    row.appendChild(colorInput);
+
+                    var nameInput = document.createElement('input');
+                    nameInput.type = 'text';
+                    nameInput.className = 'tag-name-input';
+                    nameInput.value = t.name;
+                    nameInput.maxLength = 100;
+                    row.appendChild(nameInput);
+
+                    var countLabel = document.createElement('span');
+                    countLabel.className = 'tag-page-count';
+                    countLabel.textContent = t.pageCount === 0 ? 'unused' : t.pageCount + ' pg';
+                    row.appendChild(countLabel);
+
+                    var saveBtn = document.createElement('button');
+                    saveBtn.type = 'button';
+                    saveBtn.className = 'btn btn-primary btn-sm tag-save-btn';
+                    saveBtn.textContent = 'Save';
+                    saveBtn.addEventListener('click', function () {
+                        fetch(ctx + '/app/api/tags/' + t.id, {
+                            method: 'PUT',
+                            credentials: 'same-origin',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ name: nameInput.value.trim(), color: colorInput.value })
+                        }).then(function (r) {
+                            if (r.ok) {
+                                row.classList.remove('dirty');
+                                loadManagedTags();
+                            } else {
+                                alert('Failed to update tag.');
+                            }
+                        });
+                    });
+                    row.appendChild(saveBtn);
+
+                    var delBtn = document.createElement('button');
+                    delBtn.type = 'button';
+                    delBtn.className = 'tag-delete-btn';
+                    delBtn.title = 'Delete tag';
+                    delBtn.innerHTML = '<i class="bi bi-trash3"></i>';
+                    delBtn.addEventListener('click', function () {
+                        if (t.pageCount === 0) {
+                            if (!confirm('Delete tag "' + t.name + '"?')) return;
+                            fetch(ctx + '/app/api/tags/' + t.id, {
+                                method: 'DELETE', credentials: 'same-origin'
+                            }).then(function (r) {
+                                if (r.ok || r.status === 204) loadManagedTags();
+                                else alert('Failed to delete tag.');
+                            });
+                        } else {
+                            showTagDeleteInUse(t);
+                        }
+                    });
+                    row.appendChild(delBtn);
+
+                    // Mark dirty on change
+                    function markDirty() { row.classList.add('dirty'); }
+                    colorInput.addEventListener('input', markDirty);
+                    nameInput.addEventListener('input', markDirty);
+
+                    tagManageList.appendChild(row);
+                });
+            }
+
+            function showTagDeleteInUse(tag) {
+                pendingDeleteTagId = tag.id;
+                tagDeleteName.textContent = tag.name;
+                tagDeleteCount.textContent = tag.pageCount;
+                tagDeleteInUse.style.display = '';
+
+                // Populate replace dropdown with all OTHER tags
+                tagReplaceSelect.innerHTML = '';
+                managedTags.forEach(function (t) {
+                    if (t.id === tag.id) return;
+                    var opt = document.createElement('option');
+                    opt.value = t.id;
+                    opt.textContent = t.name;
+                    tagReplaceSelect.appendChild(opt);
+                });
+            }
+
+            if (tagDeleteCancelBtn) {
+                tagDeleteCancelBtn.addEventListener('click', function () {
+                    tagDeleteInUse.style.display = 'none';
+                    pendingDeleteTagId = null;
+                });
+            }
+
+            if (tagDeleteStripBtn) {
+                tagDeleteStripBtn.addEventListener('click', function () {
+                    if (!pendingDeleteTagId) return;
+                    fetch(ctx + '/app/api/tags/' + pendingDeleteTagId, {
+                        method: 'DELETE', credentials: 'same-origin'
+                    }).then(function (r) {
+                        if (r.ok || r.status === 204) loadManagedTags();
+                        else alert('Failed to delete tag.');
+                    });
+                });
+            }
+
+            if (tagDeleteReplaceBtn) {
+                tagDeleteReplaceBtn.addEventListener('click', function () {
+                    if (!pendingDeleteTagId) return;
+                    var replaceId = tagReplaceSelect.value;
+                    if (!replaceId) { alert('Select a tag to replace with.'); return; }
+                    fetch(ctx + '/app/api/tags/' + pendingDeleteTagId + '?replaceWith=' + replaceId, {
+                        method: 'DELETE', credentials: 'same-origin'
+                    }).then(function (r) {
+                        if (r.ok || r.status === 204) loadManagedTags();
+                        else alert('Failed to replace and delete tag.');
+                    });
+                });
+            }
+
+            if (tagManageModal) {
+                tagManageModal.addEventListener('show.bs.modal', loadManagedTags);
+            }
+
+            // ------------------------------------------------------------------
+            // Delete page
+            // ------------------------------------------------------------------
+            var deleteModal = document.getElementById('deletePageModal');
+            var deleteMsg = document.getElementById('deletePageMsg');
+            var deleteLockedWrap = document.getElementById('deleteLockedWrap');
+            var deleteConfirmInput = document.getElementById('deleteConfirmInput');
+            var deleteConfirmBtn = document.getElementById('deletePageConfirmBtn');
+            var pendingDeleteId = null;
+            var pendingDeleteLocked = false;
+
+            if (deleteModal) {
+                var bsDeleteModal = new bootstrap.Modal(deleteModal);
+
+                // Intercept delete button clicks on page entries
+                document.addEventListener('click', function (e) {
+                    var btn = e.target.closest('.delete-page-btn');
+                    if (!btn) return;
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    pendingDeleteId = btn.getAttribute('data-page-id');
+                    pendingDeleteLocked = btn.getAttribute('data-locked') === 'true';
+
+                    if (pendingDeleteLocked) {
+                        deleteMsg.textContent = 'This is a locked page. Deletion is permanent.';
+                        deleteLockedWrap.style.display = '';
+                        deleteConfirmInput.value = '';
+                        deleteConfirmBtn.disabled = true;
+                    } else {
+                        deleteMsg.textContent = 'This page will be permanently deleted.';
+                        deleteLockedWrap.style.display = 'none';
+                        deleteConfirmBtn.disabled = false;
+                    }
+
+                    bsDeleteModal.show();
+                });
+
+                // For locked pages, enable confirm only when DELETE is typed
+                if (deleteConfirmInput) {
+                    deleteConfirmInput.addEventListener('input', function () {
+                        deleteConfirmBtn.disabled = (deleteConfirmInput.value !== 'DELETE');
+                    });
+                }
+
+                // Reset state when modal is hidden
+                deleteModal.addEventListener('hidden.bs.modal', function () {
+                    pendingDeleteId = null;
+                    pendingDeleteLocked = false;
+                    deleteConfirmInput.value = '';
+                    deleteConfirmBtn.disabled = true;
+                });
+
+                // Perform the delete
+                deleteConfirmBtn.addEventListener('click', function () {
+                    if (!pendingDeleteId) return;
+                    if (pendingDeleteLocked && deleteConfirmInput.value !== 'DELETE') return;
+
+                    var id = pendingDeleteId;
+                    deleteConfirmBtn.disabled = true;
+                    deleteConfirmBtn.textContent = 'Deleting\u2026';
+
+                    fetch(ctx + '/app/page/' + id, {
+                        method: 'DELETE',
+                        credentials: 'same-origin'
+                    }).then(function (r) {
+                        if (r.ok || r.status === 204) {
+                            // Remove from DOM
+                            var entry = document.querySelector('.page-entry[data-page-id="' + id + '"]');
+                            if (entry) entry.remove();
+                            bsDeleteModal.hide();
+                        } else {
+                            alert('Failed to delete page (' + r.status + ').');
+                        }
+                    }).catch(function (err) {
+                        alert('Network error: ' + err.message);
+                    }).finally(function () {
+                        deleteConfirmBtn.textContent = 'Yes, delete';
+                        deleteConfirmBtn.disabled = false;
+                    });
                 });
             }
         })();

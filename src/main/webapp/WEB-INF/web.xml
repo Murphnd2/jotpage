@@ -5,7 +5,7 @@
                              https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd"
          version="6.0">
 
-    <display-name>JotPage</display-name>
+    <display-name>Jyrnyl</display-name>
 
     <!-- All configuration (Google OAuth, DB, Whisper, Anthropic) now lives
          in jotpage.properties, loaded by com.jotpage.util.AppConfig.

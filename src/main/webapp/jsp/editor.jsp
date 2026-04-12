@@ -5,10 +5,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <title>JotPage &mdash; Editor</title>
+    <title>Jyrnyl &mdash; Editor</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <link href="${pageContext.request.contextPath}/css/theme.css" rel="stylesheet">
@@ -18,8 +18,8 @@
             margin: 0;
             overflow: hidden;
             background:
-                radial-gradient(circle at 30% 20%, rgba(201,168,76,0.05), transparent 45%),
-                radial-gradient(circle at 80% 90%, rgba(124,50,56,0.04), transparent 50%),
+                radial-gradient(circle at 30% 20%, rgba(212,148,58,0.05), transparent 45%),
+                radial-gradient(circle at 80% 90%, rgba(160,82,45,0.04), transparent 50%),
                 var(--bg-cream-dark);
             -webkit-user-select: none;
             user-select: none;
@@ -38,7 +38,7 @@
             display: flex;
             align-items: center;
             gap: 12px;
-            box-shadow: 0 1px 0 rgba(92,64,51,0.04);
+            box-shadow: 0 1px 0 rgba(74,55,40,0.04);
         }
         .editor-navbar .back-btn {
             font-size: 1.4rem;
@@ -89,6 +89,10 @@
             opacity: 0.35;
             pointer-events: none;
         }
+        .delete-page-btn:hover {
+            color: var(--accent-burgundy);
+            border-color: var(--accent-burgundy);
+        }
         .save-btn {
             min-height: 44px;
             min-width: 80px;
@@ -117,10 +121,10 @@
             touch-action: none;
             border-radius: 2px;
             box-shadow:
-                0 1px 0 rgba(92,64,51,0.06),
-                0 3px 8px rgba(92,64,51,0.12),
-                0 12px 28px rgba(92,64,51,0.18),
-                0 28px 60px rgba(92,64,51,0.14);
+                0 1px 0 rgba(74,55,40,0.06),
+                0 3px 8px rgba(74,55,40,0.12),
+                0 12px 28px rgba(74,55,40,0.18),
+                0 28px 60px rgba(74,55,40,0.14);
         }
         #canvas-wrap::before {
             /* Faint paper-edge line */
@@ -128,7 +132,7 @@
             position: absolute;
             inset: 0;
             pointer-events: none;
-            border: 1px solid rgba(92,64,51,0.08);
+            border: 1px solid rgba(74,55,40,0.08);
             border-radius: 2px;
         }
         #ink-canvas {
@@ -137,10 +141,65 @@
             height: 100%;
             touch-action: none;
         }
+        /* Image overlay layer */
+        #image-layer {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 1;
+        }
+        #image-layer.image-mode {
+            pointer-events: auto;
+        }
+        .image-handle {
+            position: absolute;
+            border: 2px dashed transparent;
+            cursor: move;
+            pointer-events: none;
+            box-sizing: border-box;
+        }
+        #image-layer.image-mode .image-handle {
+            pointer-events: auto;
+            border-color: var(--accent-gold);
+        }
+        .image-handle.selected {
+            border-color: var(--accent-brown);
+        }
+        .image-handle .ih-delete {
+            display: none;
+            position: absolute;
+            top: -12px;
+            right: -12px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--accent-burgundy);
+            color: #fff;
+            border: none;
+            font-size: 0.9rem;
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+        }
+        .image-handle.selected .ih-delete { display: inline-flex; }
+        .image-handle .ih-resize {
+            display: none;
+            position: absolute;
+            bottom: -6px;
+            right: -6px;
+            width: 14px;
+            height: 14px;
+            background: var(--accent-brown);
+            border-radius: 2px;
+            cursor: nwse-resize;
+        }
+        .image-handle.selected .ih-resize { display: block; }
+
         #text-layer {
             position: absolute;
             inset: 0;
             pointer-events: none;
+            z-index: 2;
         }
         #text-layer.text-mode {
             pointer-events: auto;
@@ -166,7 +225,7 @@
         }
         .text-block.selected {
             border-color: var(--accent-brown);
-            background: rgba(92, 64, 51, 0.04);
+            background: rgba(74, 55, 40, 0.04);
         }
         .text-block .tb-content {
             outline: none;
@@ -188,7 +247,7 @@
             font-size: 0.85rem;
             cursor: grab;
             user-select: none;
-            box-shadow: 0 1px 2px rgba(92,64,51,0.2);
+            box-shadow: 0 1px 2px rgba(74,55,40,0.2);
         }
         .text-block .tb-delete {
             position: absolute;
@@ -207,7 +266,7 @@
             cursor: pointer;
             user-select: none;
             padding: 0;
-            box-shadow: 0 1px 2px rgba(92,64,51,0.2);
+            box-shadow: 0 1px 2px rgba(74,55,40,0.2);
         }
         .text-block.selected .tb-handle,
         .text-block.selected .tb-delete,
@@ -230,7 +289,7 @@
             user-select: none;
             touch-action: none;
             font-size: 0.85rem;
-            box-shadow: 0 1px 3px rgba(92,64,51,0.25);
+            box-shadow: 0 1px 3px rgba(74,55,40,0.25);
         }
 
         .toolbar {
@@ -243,7 +302,7 @@
             justify-content: center;
             gap: 8px;
             flex-wrap: wrap;
-            box-shadow: 0 -1px 0 rgba(92,64,51,0.04);
+            box-shadow: 0 -1px 0 rgba(74,55,40,0.04);
         }
         .toolbar button,
         .toolbar label {
@@ -480,8 +539,8 @@
         body.tablet-immersive {
             /* Full-bleed canvas, warm desk background */
             background:
-                radial-gradient(circle at 30% 20%, rgba(201,168,76,0.08), transparent 50%),
-                radial-gradient(circle at 75% 85%, rgba(124,50,56,0.06), transparent 55%),
+                radial-gradient(circle at 30% 20%, rgba(212,148,58,0.08), transparent 50%),
+                radial-gradient(circle at 75% 85%, rgba(160,82,45,0.06), transparent 55%),
                 #3e2716;
             touch-action: none;
             overscroll-behavior: none;
@@ -596,7 +655,7 @@
             height: 52px;
             border-radius: 50%;
             border: 1px solid rgba(255,253,247,0.2);
-            background: rgba(92, 64, 51, 0.78);
+            background: rgba(74, 55, 40, 0.78);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             color: rgba(255,253,247,0.92);
@@ -609,7 +668,7 @@
             transition: transform 0.12s ease, background 0.15s ease;
         }
         body.tablet-immersive .tablet-fab:hover {
-            background: rgba(92, 64, 51, 0.92);
+            background: rgba(74, 55, 40, 0.92);
             transform: scale(1.05);
         }
 
@@ -646,7 +705,7 @@
                     rgba(250, 246, 240, 0.97));
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
-            border-left: 1px solid rgba(92,64,51,0.25);
+            border-left: 1px solid rgba(74,55,40,0.25);
             box-shadow: -12px 0 40px rgba(0,0,0,0.35);
             transform: translateX(100%);
             transition: transform 0.28s ease;
@@ -721,7 +780,7 @@
             font-size: 0.95rem;
         }
         body.tablet-immersive .editor-navbar.in-tablet-panel .back-btn::after {
-            content: "Back to notebook";
+            content: "Back to journal";
             font-family: var(--font-body);
         }
         body.tablet-immersive .editor-navbar.in-tablet-panel .page-header-label {
@@ -828,6 +887,12 @@
         <a class="back-btn" href="${backHref}" title="Back to dashboard">
             <i class="bi bi-arrow-left"></i>
         </a>
+        <a id="first-btn"
+           class="nav-btn ${empty firstHref ? 'disabled' : ''}"
+           title="First page"
+           href="${empty firstHref ? '#' : firstHref}">
+            <i class="bi bi-chevron-double-left"></i>
+        </a>
         <a id="prev-btn"
            class="nav-btn ${empty prevHref ? 'disabled' : ''}"
            title="Previous page"
@@ -840,9 +905,21 @@
            href="${empty nextHref ? '#' : nextHref}">
             <i class="bi bi-chevron-right"></i>
         </a>
+        <a id="last-btn"
+           class="nav-btn ${empty lastHref ? 'disabled' : ''}"
+           title="Last page"
+           href="${empty lastHref ? '#' : lastHref}">
+            <i class="bi bi-chevron-double-right"></i>
+        </a>
         <div class="page-header-label"><c:out value="${pageHeader}" /></div>
         <button id="save-btn" class="btn btn-primary save-btn" type="button">Save</button>
         <span id="save-status" class="save-status"></span>
+        <c:if test="${isPro}">
+        <button id="delete-page-btn" class="nav-btn delete-page-btn"
+                type="button" title="Delete page">
+            <i class="bi bi-trash3"></i>
+        </button>
+        </c:if>
         <button id="immersive-toggle" class="nav-btn immersive-toggle-btn"
                 type="button" title="Toggle immersive">
             <i class="bi bi-fullscreen"></i>
@@ -891,6 +968,7 @@
     <div id="canvas-stage">
         <div id="canvas-wrap">
             <canvas id="ink-canvas" width="1480" height="2100"></canvas>
+            <div id="image-layer"></div>
             <div id="text-layer"></div>
         </div>
     </div>
@@ -905,6 +983,11 @@
         <button id="tool-text" type="button" title="Text">
             <i class="bi bi-type"></i>
         </button>
+        <c:if test="${isPro}">
+        <button id="tool-image" type="button" title="Add image overlay">
+            <i class="bi bi-image"></i>
+        </button>
+        </c:if>
         <span id="font-size-wrap" class="font-size-wrap">
             <label for="tool-fontsize">Size</label>
             <select id="tool-fontsize" class="font-size-select">
@@ -937,6 +1020,33 @@
         </button>
     </div>
 
+    <!-- Delete page confirmation modal -->
+    <div class="modal fade" id="deletePageModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Delete this page?</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="deletePageMsg">This page will be permanently deleted.</p>
+                    <div id="deleteLockedWrap" style="display:none">
+                        <p class="text-danger small mb-2">
+                            This page is locked. Type <strong>DELETE</strong> to confirm.
+                        </p>
+                        <input type="text" id="deleteConfirmInput" class="form-control form-control-sm"
+                               placeholder="Type DELETE" autocomplete="off">
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" autofocus>No, keep it</button>
+                    <button type="button" class="btn btn-danger" id="deletePageConfirmBtn" disabled>Yes, delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         var pageData = ${empty pageDataJson ? 'null' : pageDataJson};
         var CONTEXT_PATH = '${pageContext.request.contextPath}';
@@ -1095,6 +1205,71 @@
             });
 
             loadPageTags();
+
+            // ----------------------------------------------------------
+            // Delete page
+            // ----------------------------------------------------------
+            var deleteBtn = document.getElementById('delete-page-btn');
+            var deleteModalEl = document.getElementById('deletePageModal');
+            var deleteLockedWrap = document.getElementById('deleteLockedWrap');
+            var deleteConfirmInput = document.getElementById('deleteConfirmInput');
+            var deleteConfirmBtn = document.getElementById('deletePageConfirmBtn');
+
+            if (deleteBtn && deleteModalEl) {
+                var bsDeleteModal = new bootstrap.Modal(deleteModalEl);
+                var isLocked = pageData && pageData.isClosed && pageData.immutableOnClose;
+
+                deleteBtn.addEventListener('click', function () {
+                    if (isLocked) {
+                        document.getElementById('deletePageMsg').textContent =
+                            'This is a locked page. Deletion is permanent.';
+                        deleteLockedWrap.style.display = '';
+                        deleteConfirmInput.value = '';
+                        deleteConfirmBtn.disabled = true;
+                    } else {
+                        document.getElementById('deletePageMsg').textContent =
+                            'This page will be permanently deleted.';
+                        deleteLockedWrap.style.display = 'none';
+                        deleteConfirmBtn.disabled = false;
+                    }
+                    bsDeleteModal.show();
+                });
+
+                if (deleteConfirmInput) {
+                    deleteConfirmInput.addEventListener('input', function () {
+                        deleteConfirmBtn.disabled = (deleteConfirmInput.value !== 'DELETE');
+                    });
+                }
+
+                deleteModalEl.addEventListener('hidden.bs.modal', function () {
+                    deleteConfirmInput.value = '';
+                    deleteConfirmBtn.disabled = true;
+                });
+
+                deleteConfirmBtn.addEventListener('click', function () {
+                    if (isLocked && deleteConfirmInput.value !== 'DELETE') return;
+
+                    deleteConfirmBtn.disabled = true;
+                    deleteConfirmBtn.textContent = 'Deleting\u2026';
+
+                    fetch(ctx + '/app/page/' + pageId, {
+                        method: 'DELETE',
+                        credentials: 'same-origin'
+                    }).then(function (r) {
+                        if (r.ok || r.status === 204) {
+                            window.location.href = '${backHref}';
+                        } else {
+                            alert('Failed to delete page (' + r.status + ').');
+                            deleteConfirmBtn.textContent = 'Yes, delete';
+                            deleteConfirmBtn.disabled = false;
+                        }
+                    }).catch(function (err) {
+                        alert('Network error: ' + err.message);
+                        deleteConfirmBtn.textContent = 'Yes, delete';
+                        deleteConfirmBtn.disabled = false;
+                    });
+                });
+            }
         })();
     </script>
 </body>

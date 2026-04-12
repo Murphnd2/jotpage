@@ -86,6 +86,19 @@ public class AiJobDao {
         return results;
     }
 
+    public int countByUserIdAndJobType(long userId, String jobType) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM ai_jobs WHERE user_id = ? AND job_type = ? "
+                + "AND status IN ('complete','processing')";
+        try (Connection conn = DbUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, userId);
+            ps.setString(2, jobType);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getInt(1) : 0;
+            }
+        }
+    }
+
     private AiJob mapRow(ResultSet rs) throws SQLException {
         AiJob j = new AiJob();
         j.setId(rs.getLong("id"));

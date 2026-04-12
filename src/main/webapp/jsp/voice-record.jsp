@@ -5,18 +5,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JotPage &mdash; Voice Entry</title>
+    <title>Jyrnyl &mdash; Voice</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <link href="${pageContext.request.contextPath}/css/theme.css" rel="stylesheet">
     <style>
         body {
             background:
-                radial-gradient(circle at 15% 10%, rgba(201,168,76,0.06), transparent 40%),
-                radial-gradient(circle at 90% 90%, rgba(124,50,56,0.04), transparent 45%),
+                radial-gradient(circle at 15% 10%, rgba(212,148,58,0.06), transparent 40%),
+                radial-gradient(circle at 90% 90%, rgba(160,82,45,0.04), transparent 45%),
                 var(--bg-cream);
             min-height: 100vh;
         }
@@ -104,8 +104,8 @@
             justify-content: center;
             cursor: pointer;
             box-shadow:
-                0 2px 8px rgba(92,64,51,0.22),
-                0 10px 24px rgba(92,64,51,0.14);
+                0 2px 8px rgba(74,55,40,0.22),
+                0 10px 24px rgba(74,55,40,0.14);
             transition: background 0.15s ease, transform 0.08s ease;
         }
         .mic-btn:hover { background: var(--accent-brown-dark); }
@@ -115,8 +115,8 @@
             animation: recPulse 1.4s ease-in-out infinite;
         }
         @keyframes recPulse {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(124,50,56,0.55); }
-            50% { box-shadow: 0 0 0 18px rgba(124,50,56,0); }
+            0%, 100% { box-shadow: 0 0 0 0 rgba(160,82,45,0.55); }
+            50% { box-shadow: 0 0 0 18px rgba(160,82,45,0); }
         }
         .elapsed {
             font-family: var(--font-serif);
@@ -150,8 +150,8 @@
         }
         .unsupported-warn {
             color: var(--accent-burgundy-dark);
-            background: rgba(124,50,56,0.08);
-            border: 1px solid rgba(124,50,56,0.22);
+            background: rgba(160,82,45,0.08);
+            border: 1px solid rgba(160,82,45,0.22);
             border-radius: var(--radius-md);
             padding: 10px 14px;
             font-size: 0.9rem;
@@ -250,7 +250,7 @@
         .transcript-box:focus {
             outline: none;
             border-color: var(--accent-brown);
-            box-shadow: 0 0 0 0.12rem rgba(92,64,51,0.12);
+            box-shadow: 0 0 0 0.12rem rgba(74,55,40,0.12);
         }
 
         /* Mode cards */
@@ -278,14 +278,14 @@
         }
         .mode-card.selected {
             border-color: var(--accent-brown);
-            background: rgba(92, 64, 51, 0.06);
+            background: rgba(74, 55, 40, 0.06);
         }
         .mode-card .mc-icon {
             flex: 0 0 auto;
             width: 40px;
             height: 40px;
             border-radius: 8px;
-            background: rgba(92, 64, 51, 0.08);
+            background: rgba(74, 55, 40, 0.08);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -381,7 +381,7 @@
             padding: 4px 12px;
             border-radius: 999px;
             font-size: 0.85rem;
-            background: rgba(201,168,76,0.08);
+            background: rgba(212,148,58,0.08);
             color: var(--text-dark);
             border: 1.5px solid var(--border-warm-strong);
             cursor: pointer;
@@ -389,7 +389,7 @@
             transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
         }
         .tag-choice:hover {
-            background: rgba(201,168,76,0.16);
+            background: rgba(212,148,58,0.16);
         }
         .tag-choice.selected {
             background: var(--accent-brown);
@@ -479,7 +479,7 @@
         .progress-card .spinner {
             width: 48px;
             height: 48px;
-            border: 4px solid rgba(92,64,51,0.15);
+            border: 4px solid rgba(74,55,40,0.15);
             border-top-color: var(--accent-brown);
             border-radius: 50%;
             margin: 0 auto 18px;
@@ -504,7 +504,7 @@
 <body class="${isPro ? 'tier-pro' : 'tier-free'}">
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <div class="container">
-            <a class="navbar-brand" href="${pageContext.request.contextPath}/app/dashboard">JotPage</a>
+            <a class="navbar-brand" href="${pageContext.request.contextPath}/app/dashboard">Jyrnyl</a>
             <div class="d-flex align-items-center ms-auto">
                 <span class="me-3 text-muted small">
                     <c:choose>
@@ -522,8 +522,8 @@
 
     <main class="voice-main">
         <div class="voice-header">
-            <h1>Voice Entry</h1>
-            <div class="subhead">Speak or upload — we'll turn it into notebook pages.</div>
+            <h1>Voice</h1>
+            <div class="subhead">Speak or upload — we'll press it into journal pages.</div>
         </div>
 
         <div class="voice-card">
@@ -662,7 +662,7 @@
 
                 <div class="upgrade-hint" id="upgradeHint">
                     <i class="bi bi-star-fill"></i>
-                    This feature requires JotPage Pro. Upgrade coming soon!
+                    This feature requires Jyrnyl Pro. Upgrade coming soon!
                 </div>
 
                 <div class="custom-prompt-wrap" id="customPromptWrap">
@@ -677,13 +677,13 @@
                     <label class="section-label" for="fontSize">Font size</label>
                     <select id="fontSize">
                         <option value="2">2</option>
-                        <option value="4">4</option>
+                        <option value="4" selected>4</option>
                         <option value="6">6</option>
                         <option value="8">8</option>
                         <option value="10">10</option>
                         <option value="12">12</option>
                         <option value="14">14</option>
-                        <option value="16" selected>16</option>
+                        <option value="16">16</option>
                         <option value="18">18</option>
                         <option value="24">24</option>
                         <option value="32">32</option>
@@ -739,8 +739,30 @@
     <script>
         window.CONTEXT_PATH = '${pageContext.request.contextPath}';
         window.USER_IS_PRO = ${isPro};
+        window.TRIAL_USAGE = ${empty trialUsageJson ? '{}' : trialUsageJson};
     </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="${pageContext.request.contextPath}/js/voice-recorder.js"></script>
+    <script>
+        // Update AI mode cards with trial usage status for free users
+        (function () {
+            if (window.USER_IS_PRO) return;
+            var usage = window.TRIAL_USAGE || {};
+            document.querySelectorAll('.mode-card.pro-only').forEach(function (card) {
+                var mode = card.getAttribute('data-mode');
+                var lockIcon = card.querySelector('.lock-icon');
+                if (!lockIcon) return;
+                var used = (usage[mode] || 0) >= 1;
+                if (used) {
+                    lockIcon.className = 'bi bi-lock-fill lock-icon';
+                    lockIcon.title = 'Trial used \u2014 upgrade to Pro';
+                } else {
+                    lockIcon.className = 'bi bi-unlock-fill lock-icon';
+                    lockIcon.title = 'Try free (1 use)';
+                    lockIcon.style.color = 'var(--accent-gold)';
+                }
+            });
+        })();
+    </script>
 </body>
 </html>

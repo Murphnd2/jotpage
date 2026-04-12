@@ -64,6 +64,7 @@ CREATE TABLE page_types (
     background_data MEDIUMTEXT NULL,
     immutable_on_close BOOLEAN NOT NULL DEFAULT FALSE,
     is_system BOOLEAN NOT NULL DEFAULT TRUE,
+    sort_order INT NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -75,6 +76,7 @@ CREATE TABLE pages (
     sort_order INT NOT NULL DEFAULT 0,
     ink_data JSON,
     text_layers JSON,
+    image_layers MEDIUMTEXT NULL,
     is_closed BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

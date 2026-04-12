@@ -11,6 +11,7 @@ public class PageType {
     private String backgroundData;
     private boolean immutableOnClose;
     private boolean system;
+    private int sortOrder;
     private Timestamp createdAt;
 
     public PageType() {
@@ -70,6 +71,14 @@ public class PageType {
 
     public void setSystem(boolean system) {
         this.system = system;
+    }
+
+    public int getSortOrder() {
+        return sortOrder;
+    }
+
+    public void setSortOrder(int sortOrder) {
+        this.sortOrder = sortOrder;
     }
 
     public Timestamp getCreatedAt() {

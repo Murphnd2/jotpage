@@ -1,5 +1,5 @@
 /*
- * JotPage — voice entry client
+ * Jyrnyl — voice entry client
  *
  * Handles:
  *   - Tab switching (record / upload)
@@ -266,9 +266,12 @@
                 console.warn('[voice] recognition error', ev.error);
             });
             state.recognition.addEventListener('end', function () {
-                // If we're still recording, restart (Chrome stops after silence)
-                if (state.recording && state.recognition) {
-                    try { state.recognition.start(); } catch (e) { /* ignore */ }
+                // Chrome stops recognition after a silence gap. Restart with
+                // a fresh instance so the results collection resets — reusing
+                // the same instance causes ev.results to retain all previous
+                // final results, which get re-appended and duplicate the text.
+                if (state.recording) {
+                    startRecognition();
                 }
             });
             state.recognition.start();
@@ -458,8 +461,12 @@
         }
 
         if (state.selectedMode !== 'verbatim' && !isPro) {
-            showError('That processing mode is part of JotPage Pro. Switch to Verbatim to continue on the free tier.');
-            return;
+            var trialUsage = window.TRIAL_USAGE || {};
+            var used = (trialUsage[state.selectedMode] || 0) >= 1;
+            if (used) {
+                showError('You\u2019ve used your free trial of this mode. Upgrade to Jyrnyl Pro for unlimited AI processing.');
+                return;
+            }
         }
         if (state.selectedMode === 'custom' && !(customPrompt.value || '').trim()) {
             showError('Add a custom instruction or choose a different mode.');
@@ -490,7 +497,7 @@
             console.log('[voice] submitting transcript-only, no audio');
         }
         fd.append('browserTranscript', transcript);
-        fd.append('fontSize', fontSizeSelect.value || '16');
+        fd.append('fontSize', fontSizeSelect.value || '4');
         fd.append('jobType', state.selectedMode);
         fd.append('customPrompt', customPrompt.value || '');
         fd.append('tagIds', Array.from(state.selectedTagIds).join(','));
@@ -501,7 +508,7 @@
             { title: 'Uploading audio…', msg: 'Sending your recording to the server' },
             { title: 'Transcribing…',    msg: 'Turning speech into text' },
             { title: 'Processing with AI…', msg: 'Shaping your transcript' },
-            { title: 'Creating pages…',  msg: 'Laying out your notebook entries' }
+            { title: 'Creating pages…',  msg: 'Pressing your journal entries' }
         ];
         var stageIdx = 0;
         var stageTimer = setInterval(function () {

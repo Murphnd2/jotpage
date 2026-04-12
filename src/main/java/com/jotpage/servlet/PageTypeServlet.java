@@ -8,6 +8,7 @@ import com.jotpage.dao.PageTypeDao;
 import com.jotpage.dao.TemplateInUseException;
 import com.jotpage.model.PageType;
 import com.jotpage.model.User;
+import com.jotpage.util.TierCheck;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.MultipartConfig;
@@ -62,6 +63,21 @@ public class PageTypeServlet extends HttpServlet {
             throws ServletException, IOException {
         User user = requireUser(req, resp);
         if (user == null) return;
+
+        // Enforce free-tier custom template limit
+        if (!TierCheck.isPro(user)) {
+            try {
+                int count = pageTypeDao.countCustomByUserId(user.getId());
+                if (count >= TierCheck.FREE_CUSTOM_TEMPLATE_LIMIT) {
+                    writeJson(resp, HttpServletResponse.SC_FORBIDDEN,
+                            "{\"error\":\"" + TierCheck.requirePro(user, TierCheck.FEATURE_CUSTOM_TEMPLATES)
+                                    .replace("\"", "\\\"") + "\"}");
+                    return;
+                }
+            } catch (SQLException e) {
+                throw new ServletException(e);
+            }
+        }
 
         String contentType = req.getContentType();
         if (contentType == null || !contentType.toLowerCase().startsWith("multipart/")) {
@@ -177,6 +193,44 @@ public class PageTypeServlet extends HttpServlet {
         }
     }
 
+    @Override
+    protected void doPut(HttpServletRequest req, HttpServletResponse resp)
+            throws ServletException, IOException {
+        User user = requireUser(req, resp);
+        if (user == null) return;
+
+        String pathInfo = req.getPathInfo();
+        if (pathInfo == null || !pathInfo.equals("/reorder")) {
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            return;
+        }
+
+        JsonObject body;
+        try {
+            body = gson.fromJson(req.getReader(), JsonObject.class);
+        } catch (Exception e) {
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "invalid JSON");
+            return;
+        }
+        if (body == null || !body.has("typeIds") || !body.get("typeIds").isJsonArray()) {
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "typeIds array required");
+            return;
+        }
+
+        com.google.gson.JsonArray arr = body.getAsJsonArray("typeIds");
+        java.util.List<Long> ids = new java.util.ArrayList<>();
+        for (int i = 0; i < arr.size(); i++) {
+            ids.add(arr.get(i).getAsLong());
+        }
+
+        try {
+            pageTypeDao.updateSortOrder(user.getId(), ids);
+            resp.setStatus(HttpServletResponse.SC_NO_CONTENT);
+        } catch (SQLException e) {
+            throw new ServletException(e);
+        }
+    }
+
     private JsonObject toLightJson(PageType t) {
         JsonObject obj = new JsonObject();
         obj.addProperty("id", t.getId());
@@ -189,6 +243,7 @@ public class PageTypeServlet extends HttpServlet {
         obj.addProperty("backgroundType", t.getBackgroundType());
         obj.addProperty("immutableOnClose", t.isImmutableOnClose());
         obj.addProperty("system", t.isSystem());
+        obj.addProperty("sortOrder", t.getSortOrder());
         return obj;
     }
 

@@ -10,6 +10,7 @@ import com.jotpage.model.Page;
 import com.jotpage.model.PageType;
 import com.jotpage.model.Tag;
 import com.jotpage.model.User;
+import com.jotpage.util.TierCheck;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -42,8 +43,9 @@ public class DashboardServlet extends HttpServlet {
         HttpSession session = req.getSession(false);
         User user = (User) session.getAttribute("user");
 
+        List<Page> pages;
         try {
-            List<Page> pages = pageDao.findByUserId(user.getId());
+            pages = pageDao.findByUserId(user.getId());
             List<PageType> types = pageTypeDao.findByUserId(user.getId());
             List<Tag> allTags = tagDao.findByUserId(user.getId());
 
@@ -62,6 +64,8 @@ public class DashboardServlet extends HttpServlet {
                 PageType t = typesById.get(p.getPageTypeId());
                 row.put("typeName", t == null ? "Unknown" : t.getName());
                 row.put("backgroundType", t == null ? "blank" : t.getBackgroundType());
+                boolean locked = p.isClosed() && t != null && t.isImmutableOnClose();
+                row.put("locked", locked);
                 row.put("createdAt", p.getCreatedAt() == null ? "" : fmt.format(p.getCreatedAt()));
 
                 List<Tag> pageTags = pageTagDao.findTagsByPageId(p.getId());
@@ -103,6 +107,21 @@ public class DashboardServlet extends HttpServlet {
         String base = req.getContextPath() + "/app/dashboard";
         req.setAttribute("bookViewUrl", base + "?view=book" + tagQuery);
         req.setAttribute("listViewUrl", base + "?view=list" + tagQuery);
+
+        // Tier info for frontend gating
+        boolean isPro = TierCheck.isPro(user);
+        req.setAttribute("isPro", isPro);
+        req.setAttribute("pageCount", pages.size());
+        req.setAttribute("pageLimit", TierCheck.FREE_PAGE_LIMIT);
+        try {
+            req.setAttribute("customTemplateCount", pageTypeDao.countCustomByUserId(user.getId()));
+        } catch (SQLException e) {
+            req.setAttribute("customTemplateCount", 0);
+        }
+        req.setAttribute("customTemplateLimit", TierCheck.FREE_CUSTOM_TEMPLATE_LIMIT);
+
+        // Pass error param (e.g. page_limit redirect)
+        req.setAttribute("errorParam", req.getParameter("error"));
 
         req.getRequestDispatcher("/jsp/dashboard.jsp").forward(req, resp);
     }

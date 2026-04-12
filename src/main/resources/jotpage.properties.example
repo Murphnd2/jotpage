@@ -30,3 +30,7 @@ ffmpeg.path=
 
 # Anthropic (Claude AI)
 anthropic.apiKey=YOUR_ANTHROPIC_API_KEY
+
+# Pro tier override — comma-separated emails that always get Pro features
+# (no restart needed if using catalina.base/conf; classpath requires redeploy)
+pro.emails=

@@ -13,6 +13,7 @@ import com.jotpage.model.Page;
 import com.jotpage.model.PageType;
 import com.jotpage.model.Tag;
 import com.jotpage.model.User;
+import com.jotpage.util.TierCheck;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -106,6 +107,14 @@ public class PageServlet extends HttpServlet {
             } catch (Exception e) {
                 pageDataJson.add("textLayers", JsonParser.parseString("[]"));
             }
+            try {
+                pageDataJson.add("imageLayers",
+                        page.getImageLayers() == null || page.getImageLayers().isEmpty()
+                                ? JsonParser.parseString("[]")
+                                : JsonParser.parseString(page.getImageLayers()));
+            } catch (Exception e) {
+                pageDataJson.add("imageLayers", JsonParser.parseString("[]"));
+            }
 
             // Header text: "Apr 11, 2026 — Lined"
             String headerDate = page.getCreatedAt() == null
@@ -121,31 +130,48 @@ public class PageServlet extends HttpServlet {
             List<Page> filtered = filterByAnyTag(pool, tagFilter);
 
             Long prevId = null, nextId = null;
+            Long firstId = null, lastId = null;
+            if (!filtered.isEmpty()) {
+                firstId = filtered.get(0).getId();
+                lastId = filtered.get(filtered.size() - 1).getId();
+            }
             for (int i = 0; i < filtered.size(); i++) {
                 if (filtered.get(i).getId() == pageId) {
                     if (i > 0) prevId = filtered.get(i - 1).getId();
                     if (i < filtered.size() - 1) nextId = filtered.get(i + 1).getId();
+                    // Don't show first/last if already at the boundary
+                    if (i == 0) firstId = null;
+                    if (i == filtered.size() - 1) lastId = null;
                     break;
                 }
             }
 
             String tagSuffix = (tagsParam == null || tagsParam.isEmpty())
                     ? "" : ("?tags=" + tagsParam);
+            String firstHref = firstId == null
+                    ? null
+                    : req.getContextPath() + "/app/page/" + firstId + tagSuffix;
             String prevHref = prevId == null
                     ? null
                     : req.getContextPath() + "/app/page/" + prevId + tagSuffix;
             String nextHref = nextId == null
                     ? null
                     : req.getContextPath() + "/app/page/" + nextId + tagSuffix;
+            String lastHref = lastId == null
+                    ? null
+                    : req.getContextPath() + "/app/page/" + lastId + tagSuffix;
             String backHref = req.getContextPath() + "/app/dashboard" + tagSuffix;
 
             req.setAttribute("page", page);
             req.setAttribute("pageType", pageType);
             req.setAttribute("pageDataJson", gson.toJson(pageDataJson));
             req.setAttribute("pageHeader", pageHeader);
+            req.setAttribute("firstHref", firstHref);
             req.setAttribute("prevHref", prevHref);
             req.setAttribute("nextHref", nextHref);
+            req.setAttribute("lastHref", lastHref);
             req.setAttribute("backHref", backHref);
+            req.setAttribute("isPro", TierCheck.isPro(user));
             req.getRequestDispatcher("/jsp/editor.jsp").forward(req, resp);
         } catch (SQLException e) {
             throw new ServletException(e);
@@ -202,6 +228,15 @@ public class PageServlet extends HttpServlet {
         if (!pt.isSystem() && (pt.getUserId() == null || pt.getUserId() != user.getId())) {
             resp.sendError(HttpServletResponse.SC_FORBIDDEN);
             return;
+        }
+
+        // Enforce free-tier page limit
+        if (!TierCheck.isPro(user)) {
+            int count = pageDao.countByUserId(user.getId());
+            if (count >= TierCheck.FREE_PAGE_LIMIT) {
+                resp.sendRedirect(req.getContextPath() + "/app/dashboard?error=page_limit");
+                return;
+            }
         }
 
         Page page = new Page();
@@ -270,6 +305,9 @@ public class PageServlet extends HttpServlet {
             if (json.has("textLayers") && !json.get("textLayers").isJsonNull()) {
                 existing.setTextLayers(json.get("textLayers").toString());
             }
+            if (json.has("imageLayers") && !json.get("imageLayers").isJsonNull()) {
+                existing.setImageLayers(json.get("imageLayers").toString());
+            }
 
             try {
                 pageDao.update(existing);
@@ -313,6 +351,41 @@ public class PageServlet extends HttpServlet {
             resp.setStatus(HttpServletResponse.SC_OK);
             resp.setContentType("application/json");
             resp.getWriter().write("{\"ok\":true}");
+        } catch (SQLException e) {
+            throw new ServletException(e);
+        }
+    }
+
+    @Override
+    protected void doDelete(HttpServletRequest req, HttpServletResponse resp)
+            throws ServletException, IOException {
+        User user = requireUser(req, resp);
+        if (user == null) return;
+
+        if (!TierCheck.isPro(user)) {
+            resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            resp.setContentType("application/json");
+            resp.setCharacterEncoding("UTF-8");
+            resp.getWriter().write("{\"error\":\"" + TierCheck.requirePro(user, TierCheck.FEATURE_DELETE).replace("\"", "\\\"") + "\"}");
+            return;
+        }
+
+        String pathInfo = req.getPathInfo();
+        if (pathInfo == null || pathInfo.length() < 2) {
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            return;
+        }
+        long pageId;
+        try {
+            pageId = Long.parseLong(pathInfo.substring(1));
+        } catch (NumberFormatException e) {
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            return;
+        }
+
+        try {
+            pageDao.delete(pageId, user.getId());
+            resp.setStatus(HttpServletResponse.SC_NO_CONTENT);
         } catch (SQLException e) {
             throw new ServletException(e);
         }

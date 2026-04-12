@@ -1,42 +1,42 @@
-/* JotPage — warm paper/journal theme */
+/* Jyrnyl — vinyl / LP culture theme */
 
 :root {
-    --bg-cream: #faf6f0;
-    --bg-cream-dark: #f0e9da;
-    --bg-card: #fffdf9;
-    --bg-card-raised: #ffffff;
+    --bg-cream: #f8f4ec;
+    --bg-cream-dark: #eee6d4;
+    --bg-card: #fdfaf3;
+    --bg-card-raised: #fffefa;
 
-    --accent-brown: #5c4033;
-    --accent-brown-dark: #3d2a22;
-    --accent-burgundy: #7c3238;
-    --accent-burgundy-dark: #5a2228;
-    --accent-gold: #c9a84c;
-    --accent-gold-dark: #a88839;
+    --accent-brown: #4a3728;
+    --accent-brown-dark: #332518;
+    --accent-burgundy: #a0522d;
+    --accent-burgundy-dark: #7a3a1a;
+    --accent-gold: #d4943a;
+    --accent-gold-dark: #b47a28;
 
-    --text-dark: #3b2f2f;
-    --text-muted: #8a7e74;
-    --text-light: #b3a89d;
+    --text-dark: #2e2420;
+    --text-muted: #7d7068;
+    --text-light: #a89a8e;
 
-    --border-warm: #e8dfd0;
-    --border-warm-strong: #d4c8b4;
+    --border-warm: #e2d8c6;
+    --border-warm-strong: #cfc0a8;
 
-    --shadow-soft: 0 1px 3px rgba(92, 64, 51, 0.06), 0 4px 12px rgba(92, 64, 51, 0.04);
-    --shadow-hover: 0 2px 6px rgba(92, 64, 51, 0.10), 0 10px 24px rgba(92, 64, 51, 0.08);
-    --shadow-paper: 0 1px 0 rgba(92, 64, 51, 0.04), 0 3px 6px rgba(92, 64, 51, 0.08), 0 12px 32px rgba(92, 64, 51, 0.08);
+    --shadow-soft: 0 1px 3px rgba(74, 55, 40, 0.07), 0 4px 12px rgba(74, 55, 40, 0.05);
+    --shadow-hover: 0 2px 6px rgba(74, 55, 40, 0.12), 0 10px 24px rgba(74, 55, 40, 0.09);
+    --shadow-paper: 0 1px 0 rgba(74, 55, 40, 0.05), 0 3px 6px rgba(74, 55, 40, 0.09), 0 12px 32px rgba(74, 55, 40, 0.09);
 
-    --font-serif: 'Playfair Display', Georgia, 'Times New Roman', serif;
-    --font-body: 'Source Sans 3', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --font-serif: 'DM Serif Display', Georgia, 'Times New Roman', serif;
+    --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 
-    --radius-sm: 4px;
-    --radius-md: 8px;
-    --radius-lg: 14px;
+    --radius-sm: 5px;
+    --radius-md: 10px;
+    --radius-lg: 16px;
 
-    /* Tag earth-tone palette used when user-selected colors aren't overridden */
-    --tag-1: #8b6e4e;
-    --tag-2: #a6794b;
-    --tag-3: #7c3238;
-    --tag-4: #6d7b5c;
-    --tag-5: #c9a84c;
+    /* Tag earth-tone palette — retro faded poster colours */
+    --tag-1: #6b5240;
+    --tag-2: #a0522d;
+    --tag-3: #8b5e3c;
+    --tag-4: #5c7054;
+    --tag-5: #d4943a;
 }
 
 html, body {
@@ -52,7 +52,7 @@ h1, h2, h3, h4, h5, h6, .serif {
     font-family: var(--font-serif);
     color: var(--text-dark);
     letter-spacing: -0.01em;
-    font-weight: 600;
+    font-weight: 400;
 }
 
 a {
@@ -158,18 +158,18 @@ small.text-muted {
 .form-control:focus,
 .form-select:focus {
     border-color: var(--accent-brown);
-    box-shadow: 0 0 0 0.15rem rgba(92, 64, 51, 0.12);
+    box-shadow: 0 0 0 0.15rem rgba(74, 55, 40, 0.12);
 }
 
 /* Navbar */
 .navbar.navbar-light {
     background: var(--bg-card) !important;
     border-bottom: 1px solid var(--border-warm);
-    box-shadow: 0 1px 0 rgba(92, 64, 51, 0.03);
+    box-shadow: 0 1px 0 rgba(74, 55, 40, 0.03);
 }
 .navbar-brand {
     font-family: var(--font-serif) !important;
-    font-weight: 600;
+    font-weight: 400;
     color: var(--text-dark) !important;
     font-size: 1.4rem;
     letter-spacing: 0.01em;
@@ -196,7 +196,7 @@ small.text-muted {
 }
 .modal-title {
     font-family: var(--font-serif);
-    font-weight: 600;
+    font-weight: 400;
     color: var(--text-dark);
 }
 
@@ -208,7 +208,7 @@ small.text-muted {
 }
 .list-group-item-action:hover,
 .list-group-item-action:focus {
-    background: rgba(201, 168, 76, 0.10);
+    background: rgba(212, 148, 58, 0.10);
     color: var(--text-dark);
 }
 

@@ -16,7 +16,7 @@ public class PageTypeDao {
 
     private static final String SELECT_COLUMNS =
             "SELECT id, user_id, name, background_type, background_data, "
-                    + "immutable_on_close, is_system, created_at FROM page_types";
+                    + "immutable_on_close, is_system, sort_order, created_at FROM page_types";
 
     public List<PageType> findSystemTypes() throws SQLException {
         String sql = SELECT_COLUMNS + " WHERE is_system = TRUE ORDER BY id";
@@ -32,7 +32,7 @@ public class PageTypeDao {
     }
 
     public List<PageType> findByUserId(long userId) throws SQLException {
-        String sql = SELECT_COLUMNS + " WHERE is_system = TRUE OR user_id = ? ORDER BY is_system DESC, id";
+        String sql = SELECT_COLUMNS + " WHERE is_system = TRUE OR user_id = ? ORDER BY sort_order ASC, id ASC";
         List<PageType> results = new ArrayList<>();
         try (Connection conn = DbUtil.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -61,25 +61,42 @@ public class PageTypeDao {
     }
 
     public PageType create(PageType pt) throws SQLException {
-        String sql = "INSERT INTO page_types "
-                + "(user_id, name, background_type, background_data, immutable_on_close, is_system) "
-                + "VALUES (?, ?, ?, ?, ?, ?)";
-        try (Connection conn = DbUtil.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            if (pt.getUserId() == null) {
-                ps.setNull(1, Types.BIGINT);
-            } else {
-                ps.setLong(1, pt.getUserId());
+        try (Connection conn = DbUtil.getConnection()) {
+            // Compute next sort_order for this user's visible templates
+            int nextSort = 0;
+            String maxSql = "SELECT COALESCE(MAX(sort_order), 0) + 1 FROM page_types "
+                    + "WHERE is_system = TRUE OR user_id = ?";
+            try (PreparedStatement maxPs = conn.prepareStatement(maxSql)) {
+                if (pt.getUserId() == null) {
+                    maxPs.setNull(1, Types.BIGINT);
+                } else {
+                    maxPs.setLong(1, pt.getUserId());
+                }
+                try (ResultSet rs = maxPs.executeQuery()) {
+                    if (rs.next()) nextSort = rs.getInt(1);
+                }
             }
-            ps.setString(2, pt.getName());
-            ps.setString(3, pt.getBackgroundType());
-            ps.setString(4, pt.getBackgroundData());
-            ps.setBoolean(5, pt.isImmutableOnClose());
-            ps.setBoolean(6, pt.isSystem());
-            ps.executeUpdate();
-            try (ResultSet keys = ps.getGeneratedKeys()) {
-                if (keys.next()) {
-                    pt.setId(keys.getLong(1));
+
+            String sql = "INSERT INTO page_types "
+                    + "(user_id, name, background_type, background_data, immutable_on_close, is_system, sort_order) "
+                    + "VALUES (?, ?, ?, ?, ?, ?, ?)";
+            try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+                if (pt.getUserId() == null) {
+                    ps.setNull(1, Types.BIGINT);
+                } else {
+                    ps.setLong(1, pt.getUserId());
+                }
+                ps.setString(2, pt.getName());
+                ps.setString(3, pt.getBackgroundType());
+                ps.setString(4, pt.getBackgroundData());
+                ps.setBoolean(5, pt.isImmutableOnClose());
+                ps.setBoolean(6, pt.isSystem());
+                ps.setInt(7, nextSort);
+                ps.executeUpdate();
+                try (ResultSet keys = ps.getGeneratedKeys()) {
+                    if (keys.next()) {
+                        pt.setId(keys.getLong(1));
+                    }
                 }
             }
         }
@@ -104,6 +121,33 @@ public class PageTypeDao {
         }
     }
 
+    public int countCustomByUserId(long userId) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM page_types WHERE user_id = ? AND is_system = FALSE";
+        try (Connection conn = DbUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getInt(1) : 0;
+            }
+        }
+    }
+
+    public void updateSortOrder(long userId, List<Long> orderedIds) throws SQLException {
+        if (orderedIds == null || orderedIds.isEmpty()) return;
+        String sql = "UPDATE page_types SET sort_order = ? "
+                + "WHERE id = ? AND (is_system = TRUE OR user_id = ?)";
+        try (Connection conn = DbUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            for (int i = 0; i < orderedIds.size(); i++) {
+                ps.setInt(1, i);
+                ps.setLong(2, orderedIds.get(i));
+                ps.setLong(3, userId);
+                ps.addBatch();
+            }
+            ps.executeBatch();
+        }
+    }
+
     private PageType mapRow(ResultSet rs) throws SQLException {
         PageType pt = new PageType();
         pt.setId(rs.getLong("id"));
@@ -114,6 +158,7 @@ public class PageTypeDao {
         pt.setBackgroundData(rs.getString("background_data"));
         pt.setImmutableOnClose(rs.getBoolean("immutable_on_close"));
         pt.setSystem(rs.getBoolean("is_system"));
+        pt.setSortOrder(rs.getInt("sort_order"));
         pt.setCreatedAt(rs.getTimestamp("created_at"));
         return pt;
     }
