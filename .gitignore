@@ -1,0 +1,15 @@
+# IDE
+.idea/
+*.iml
+
+# Build output
+target/
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Secrets — excluded until credentials are externalized
+src/main/webapp/WEB-INF/web.xml
+src/main/webapp/META-INF/context.xml
+client_secret_*.json

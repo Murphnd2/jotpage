@@ -1,0 +1,233 @@
+/* JotPage — warm paper/journal theme */
+
+:root {
+    --bg-cream: #faf6f0;
+    --bg-cream-dark: #f0e9da;
+    --bg-card: #fffdf9;
+    --bg-card-raised: #ffffff;
+
+    --accent-brown: #5c4033;
+    --accent-brown-dark: #3d2a22;
+    --accent-burgundy: #7c3238;
+    --accent-burgundy-dark: #5a2228;
+    --accent-gold: #c9a84c;
+    --accent-gold-dark: #a88839;
+
+    --text-dark: #3b2f2f;
+    --text-muted: #8a7e74;
+    --text-light: #b3a89d;
+
+    --border-warm: #e8dfd0;
+    --border-warm-strong: #d4c8b4;
+
+    --shadow-soft: 0 1px 3px rgba(92, 64, 51, 0.06), 0 4px 12px rgba(92, 64, 51, 0.04);
+    --shadow-hover: 0 2px 6px rgba(92, 64, 51, 0.10), 0 10px 24px rgba(92, 64, 51, 0.08);
+    --shadow-paper: 0 1px 0 rgba(92, 64, 51, 0.04), 0 3px 6px rgba(92, 64, 51, 0.08), 0 12px 32px rgba(92, 64, 51, 0.08);
+
+    --font-serif: 'Playfair Display', Georgia, 'Times New Roman', serif;
+    --font-body: 'Source Sans 3', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 14px;
+
+    /* Tag earth-tone palette used when user-selected colors aren't overridden */
+    --tag-1: #8b6e4e;
+    --tag-2: #a6794b;
+    --tag-3: #7c3238;
+    --tag-4: #6d7b5c;
+    --tag-5: #c9a84c;
+}
+
+html, body {
+    background: var(--bg-cream);
+    color: var(--text-dark);
+    font-family: var(--font-body);
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6, .serif {
+    font-family: var(--font-serif);
+    color: var(--text-dark);
+    letter-spacing: -0.01em;
+    font-weight: 600;
+}
+
+a {
+    color: var(--accent-brown);
+    text-decoration: none;
+    transition: color 0.15s ease;
+}
+a:hover {
+    color: var(--accent-brown-dark);
+}
+
+.text-muted,
+.text-muted small,
+small.text-muted {
+    color: var(--text-muted) !important;
+}
+
+/* -------- Bootstrap overrides -------- */
+
+.btn {
+    border-radius: var(--radius-md);
+    transition: background-color 0.15s ease, border-color 0.15s ease,
+                color 0.15s ease, transform 0.08s ease, box-shadow 0.15s ease;
+}
+
+.btn-primary,
+.btn-primary:focus {
+    background-color: var(--accent-brown);
+    border-color: var(--accent-brown);
+    color: #fff;
+    box-shadow: none;
+}
+.btn-primary:hover {
+    background-color: var(--accent-brown-dark);
+    border-color: var(--accent-brown-dark);
+    color: #fff;
+}
+.btn-primary:active,
+.btn-primary.active {
+    background-color: var(--accent-brown-dark) !important;
+    border-color: var(--accent-brown-dark) !important;
+}
+.btn-primary:disabled,
+.btn-primary.disabled {
+    background-color: var(--accent-brown);
+    border-color: var(--accent-brown);
+    opacity: 0.5;
+}
+
+.btn-outline-primary {
+    color: var(--accent-brown);
+    border-color: var(--accent-brown);
+    background: transparent;
+}
+.btn-outline-primary:hover,
+.btn-outline-primary:focus {
+    background-color: var(--accent-brown);
+    color: #fff;
+    border-color: var(--accent-brown);
+}
+
+.btn-outline-secondary {
+    color: var(--text-muted);
+    border-color: var(--border-warm-strong);
+    background: var(--bg-card);
+}
+.btn-outline-secondary:hover,
+.btn-outline-secondary:focus {
+    background-color: var(--bg-cream-dark);
+    color: var(--text-dark);
+    border-color: var(--border-warm-strong);
+}
+
+.btn-warning,
+.btn-warning:focus {
+    background-color: var(--accent-gold);
+    border-color: var(--accent-gold-dark);
+    color: var(--text-dark);
+}
+.btn-warning:hover {
+    background-color: var(--accent-gold-dark);
+    border-color: var(--accent-gold-dark);
+    color: var(--text-dark);
+}
+
+.btn-link {
+    color: var(--accent-brown);
+    text-decoration: none;
+}
+.btn-link:hover {
+    color: var(--accent-brown-dark);
+    text-decoration: underline;
+}
+
+/* Forms */
+.form-control,
+.form-select {
+    background: var(--bg-card);
+    border: 1px solid var(--border-warm-strong);
+    color: var(--text-dark);
+    border-radius: var(--radius-md);
+}
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--accent-brown);
+    box-shadow: 0 0 0 0.15rem rgba(92, 64, 51, 0.12);
+}
+
+/* Navbar */
+.navbar.navbar-light {
+    background: var(--bg-card) !important;
+    border-bottom: 1px solid var(--border-warm);
+    box-shadow: 0 1px 0 rgba(92, 64, 51, 0.03);
+}
+.navbar-brand {
+    font-family: var(--font-serif) !important;
+    font-weight: 600;
+    color: var(--text-dark) !important;
+    font-size: 1.4rem;
+    letter-spacing: 0.01em;
+}
+
+/* Cards */
+.card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-warm);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-soft);
+    color: var(--text-dark);
+}
+
+/* Modal */
+.modal-content {
+    background: var(--bg-card);
+    border: 1px solid var(--border-warm);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-paper);
+}
+.modal-header {
+    border-bottom: 1px solid var(--border-warm);
+}
+.modal-title {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+/* List group */
+.list-group-item {
+    background: transparent;
+    border-color: var(--border-warm);
+    color: var(--text-dark);
+}
+.list-group-item-action:hover,
+.list-group-item-action:focus {
+    background: rgba(201, 168, 76, 0.10);
+    color: var(--text-dark);
+}
+
+/* Badges */
+.badge.bg-secondary {
+    background-color: var(--text-muted) !important;
+}
+.badge.bg-warning {
+    background-color: var(--accent-gold) !important;
+    color: var(--text-dark) !important;
+}
+.badge.bg-light {
+    background-color: var(--bg-cream-dark) !important;
+    color: var(--text-dark) !important;
+    border-color: var(--border-warm-strong) !important;
+}
+
+/* Focus outlines */
+:focus-visible {
+    outline: 2px solid var(--accent-gold);
+    outline-offset: 2px;
+}
