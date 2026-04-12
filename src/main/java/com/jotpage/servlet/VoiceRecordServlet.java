@@ -15,6 +15,7 @@ import com.jotpage.model.Page;
 import com.jotpage.model.PageType;
 import com.jotpage.model.UsageRecord;
 import com.jotpage.model.User;
+import com.jotpage.util.AppConfig;
 import com.jotpage.util.ClaudeService;
 import com.jotpage.util.PageSplitter;
 import com.jotpage.util.TierCheck;
@@ -67,15 +68,15 @@ public class VoiceRecordServlet extends HttpServlet {
 
     @Override
     public void init() throws ServletException {
-        String whisperCommand = getServletContext().getInitParameter("whisper.command");
-        String whisperModel = getServletContext().getInitParameter("whisper.model");
-        String ffmpegPath = getServletContext().getInitParameter("ffmpeg.path");
+        String whisperCommand = AppConfig.get("whisper.command", "whisper");
+        String whisperModel = AppConfig.get("whisper.model", "base");
+        String ffmpegPath = AppConfig.get("ffmpeg.path", "");
         whisperService = new WhisperService(whisperCommand, whisperModel, ffmpegPath);
         if (ffmpegPath != null && !ffmpegPath.trim().isEmpty()) {
             log("[voice] ffmpeg.path configured: " + ffmpegPath.trim());
         }
 
-        String apiKey = getServletContext().getInitParameter("anthropic.apiKey");
+        String apiKey = AppConfig.get("anthropic.apiKey");
         if (apiKey != null) apiKey = apiKey.trim();
         if (apiKey != null && !apiKey.isEmpty()
                 && !"PASTE_YOUR_API_KEY_HERE".equals(apiKey)) {

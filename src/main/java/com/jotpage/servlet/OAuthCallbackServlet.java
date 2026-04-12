@@ -10,8 +10,8 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 
 import com.jotpage.dao.UserDao;
 import com.jotpage.model.User;
+import com.jotpage.util.AppConfig;
 
-import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -40,14 +40,10 @@ public class OAuthCallbackServlet extends HttpServlet {
             return;
         }
 
-        ServletContext ctx = getServletContext();
-        String clientId = ctx.getInitParameter("google.clientId");
-        String clientSecret = ctx.getInitParameter("google.clientSecret");
-        String redirectUri = ctx.getInitParameter("google.redirectUri");
+        String clientId = AppConfig.get("google.clientId");
+        String clientSecret = AppConfig.get("google.clientSecret");
+        String redirectUri = AppConfig.get("google.redirectUri");
 
-        // Diagnostic: this redirect_uri must match byte-for-byte the one
-        // LoginServlet used when producing the authorize URL. Google rejects
-        // the token exchange with redirect_uri_mismatch on any drift.
         log("[oauth-cb] clientId=" + clientId
                 + " redirectUri=[" + redirectUri + "]"
                 + " length=" + (redirectUri == null ? -1 : redirectUri.length()));

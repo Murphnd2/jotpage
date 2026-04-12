@@ -1,38 +1,54 @@
 package com.jotpage.util;
 
-import javax.naming.Context;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 
+import com.mysql.cj.jdbc.MysqlDataSource;
+
 /**
- * Simple JDBC connection utility that obtains connections from the
- * JNDI DataSource "jdbc/jotpage" configured in context.xml.
+ * Simple JDBC connection utility. Reads all {@code db.*} keys from
+ * {@link AppConfig} and hands out connections from a MySQL DataSource.
+ *
+ * Previous versions used a JNDI DataSource configured in
+ * {@code META-INF/context.xml}. This version reads from the external
+ * {@code jotpage.properties} file instead, so credentials stay out of the
+ * WAR and the repo.
  */
 public class DbUtil {
 
-    private static final String JNDI_NAME = "java:comp/env/jdbc/jotpage";
-
-    private static DataSource dataSource;
+    private static volatile MysqlDataSource dataSource;
 
     private DbUtil() {
     }
 
-    private static synchronized DataSource getDataSource() throws NamingException {
-        if (dataSource == null) {
-            Context initCtx = new InitialContext();
-            dataSource = (DataSource) initCtx.lookup(JNDI_NAME);
+    private static MysqlDataSource getDataSource() {
+        if (dataSource != null) return dataSource;
+        synchronized (DbUtil.class) {
+            if (dataSource != null) return dataSource;
+
+            String url = AppConfig.get("db.url");
+            String user = AppConfig.get("db.username");
+            String pass = AppConfig.get("db.password");
+
+            if (url == null || url.isEmpty()) {
+                throw new RuntimeException(
+                        "[DbUtil] db.url is not configured in jotpage.properties");
+            }
+
+            MysqlDataSource ds = new MysqlDataSource();
+            ds.setUrl(url);
+            if (user != null) ds.setUser(user);
+            if (pass != null) ds.setPassword(pass);
+
+            System.out.println("[DbUtil] DataSource configured for "
+                    + url.replaceAll("password=[^&]*", "password=***"));
+
+            dataSource = ds;
         }
         return dataSource;
     }
 
     public static Connection getConnection() throws SQLException {
-        try {
-            return getDataSource().getConnection();
-        } catch (NamingException e) {
-            throw new SQLException("Unable to look up JNDI DataSource " + JNDI_NAME, e);
-        }
+        return getDataSource().getConnection();
     }
 }

@@ -2,7 +2,8 @@ package com.jotpage.servlet;
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeRequestUrl;
 
-import jakarta.servlet.ServletContext;
+import com.jotpage.util.AppConfig;
+
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -18,14 +19,9 @@ public class LoginServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
-        ServletContext ctx = getServletContext();
-        String clientId = ctx.getInitParameter("google.clientId");
-        String redirectUri = ctx.getInitParameter("google.redirectUri");
+        String clientId = AppConfig.get("google.clientId");
+        String redirectUri = AppConfig.get("google.redirectUri");
 
-        // Diagnostic: the redirect_uri we send here must match both the
-        // Google Cloud Console entry AND the value OAuthCallbackServlet
-        // sends during the token exchange. Brackets make whitespace
-        // visible; length catches invisible trailing characters.
         log("[login] clientId=" + clientId
                 + " redirectUri=[" + redirectUri + "]"
                 + " length=" + (redirectUri == null ? -1 : redirectUri.length()));

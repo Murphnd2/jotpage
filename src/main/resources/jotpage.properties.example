@@ -1,0 +1,32 @@
+# ============================================================
+# jotpage.properties — JotPage application configuration
+#
+# Copy this file to one of:
+#   1. The path specified by -Djotpage.config=/path/to/jotpage.properties
+#   2. {catalina.base}/conf/jotpage.properties  (e.g. /var/lib/tomcat10/conf/)
+#   3. src/main/resources/jotpage.properties     (local dev, gitignored)
+#
+# Fill in real values. Do NOT commit the real file to Git.
+# ============================================================
+
+# Google OAuth
+google.clientId=YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com
+google.clientSecret=YOUR_GOOGLE_CLIENT_SECRET
+google.redirectUri=http://localhost:8080/jotpage/oauth2callback
+
+# Database (JDBC)
+db.url=jdbc:mysql://127.0.0.1:3306/jotpage?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+db.username=jotpage
+db.password=YOUR_DB_PASSWORD
+db.driverClassName=com.mysql.cj.jdbc.Driver
+db.maxTotal=20
+db.maxIdle=10
+db.maxWaitMillis=10000
+
+# Whisper (speech-to-text CLI)
+whisper.command=whisper
+whisper.model=base
+ffmpeg.path=
+
+# Anthropic (Claude AI)
+anthropic.apiKey=YOUR_ANTHROPIC_API_KEY
