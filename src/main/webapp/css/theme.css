@@ -173,6 +173,11 @@ small.text-muted {
     color: var(--text-dark) !important;
     font-size: 1.4rem;
     letter-spacing: 0.01em;
+    background-image: url("../images/jyrnyl-logo-square.svg");
+    background-repeat: no-repeat;
+    background-size: 28px 28px;
+    background-position: left center;
+    padding-left: 36px !important;
 }
 
 /* Cards */

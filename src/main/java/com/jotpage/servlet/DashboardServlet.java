@@ -6,9 +6,11 @@ import com.jotpage.dao.PageDao;
 import com.jotpage.dao.PageTagDao;
 import com.jotpage.dao.PageTypeDao;
 import com.jotpage.dao.TagDao;
+import com.jotpage.dao.UsageDao;
 import com.jotpage.model.Page;
 import com.jotpage.model.PageType;
 import com.jotpage.model.Tag;
+import com.jotpage.model.UsageRecord;
 import com.jotpage.model.User;
 import com.jotpage.util.TierCheck;
 
@@ -35,6 +37,7 @@ public class DashboardServlet extends HttpServlet {
     private final PageTypeDao pageTypeDao = new PageTypeDao();
     private final PageTagDao pageTagDao = new PageTagDao();
     private final TagDao tagDao = new TagDao();
+    private final UsageDao usageDao = new UsageDao();
     private final Gson gson = new Gson();
 
     @Override
@@ -110,9 +113,22 @@ public class DashboardServlet extends HttpServlet {
 
         // Tier info for frontend gating
         boolean isPro = TierCheck.isPro(user);
+        boolean firstMonth = TierCheck.isInFirstMonth(user);
+        int monthlyLimit = TierCheck.getMonthlyPageLimit(user);
+
+        int pagesThisMonth = 0;
+        try {
+            UsageRecord usage = usageDao.findOrCreateCurrentMonth(user.getId());
+            if (usage != null) pagesThisMonth = usage.getPagesCreated();
+        } catch (SQLException e) {
+            // Fall through with 0; display logic will just show "0 / 20".
+        }
+
         req.setAttribute("isPro", isPro);
-        req.setAttribute("pageCount", pages.size());
-        req.setAttribute("pageLimit", TierCheck.FREE_PAGE_LIMIT);
+        req.setAttribute("isFirstMonth", firstMonth);
+        req.setAttribute("pagesThisMonth", pagesThisMonth);
+        req.setAttribute("monthlyPageLimit", monthlyLimit); // -1 = unlimited
+        req.setAttribute("pageCount", pages.size()); // kept for any legacy references
         try {
             req.setAttribute("customTemplateCount", pageTypeDao.countCustomByUserId(user.getId()));
         } catch (SQLException e) {

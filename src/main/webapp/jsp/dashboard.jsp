@@ -5,13 +5,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jyrnyl</title>
+    <title>My Jyrnyl — Record your life.</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <link href="${pageContext.request.contextPath}/css/theme.css" rel="stylesheet">
+    <%@ include file="/WEB-INF/jspf/pwa-head.jspf" %>
     <style>
         body {
             background:
@@ -159,7 +160,6 @@
             z-index: 2;
         }
         .page-entry:hover .delete-page-btn { opacity: 0.6; }
-        body.tier-free .delete-page-btn { display: none !important; }
         .page-entry .delete-page-btn:hover {
             opacity: 1;
             background: rgba(160,82,45,0.12);
@@ -926,7 +926,14 @@
                 <h1 class="mb-0">My Jyrnyl</h1>
                 <div class="subhead">Drop the needle on a new thought</div>
                 <c:if test="${!isPro}">
-                    <div class="text-muted small mt-1">${pageCount} / ${pageLimit} pages</div>
+                    <c:choose>
+                        <c:when test="${monthlyPageLimit == -1}">
+                            <div class="text-muted small mt-1">Unlimited pages this month</div>
+                        </c:when>
+                        <c:otherwise>
+                            <div class="text-muted small mt-1">${pagesThisMonth} / ${monthlyPageLimit} pages this month</div>
+                        </c:otherwise>
+                    </c:choose>
                 </c:if>
             </div>
             <div class="d-flex gap-2 align-items-center flex-wrap">
@@ -1207,8 +1214,9 @@
         window.JOTPAGE_VIEW_MODE = '${viewMode}';
         window.BOOK_PAGES = ${pagesJson};
         window.IS_PRO = ${isPro};
-        window.PAGE_COUNT = ${pageCount};
-        window.PAGE_LIMIT = ${pageLimit};
+        window.IS_FIRST_MONTH = ${isFirstMonth};
+        window.PAGES_THIS_MONTH = ${pagesThisMonth};
+        window.MONTHLY_PAGE_LIMIT = ${monthlyPageLimit};
         window.CUSTOM_TEMPLATE_COUNT = ${customTemplateCount};
         window.CUSTOM_TEMPLATE_LIMIT = ${customTemplateLimit};
     </script>
@@ -1231,7 +1239,7 @@
             // Handle ?error=page_limit redirect
             var errorParam = '${errorParam}';
             if (errorParam === 'page_limit') {
-                showUpgrade('You\u2019ve reached the ' + window.PAGE_LIMIT + '-page limit. Upgrade to Jyrnyl Pro for unlimited pages.');
+                showUpgrade('You\u2019ve reached the ' + window.MONTHLY_PAGE_LIMIT + '-page monthly limit. Upgrade to Jyrnyl Pro for unlimited pages.');
                 // Clean URL
                 history.replaceState(null, '', location.pathname + location.search.replace(/[?&]error=page_limit/, ''));
             }
@@ -1971,5 +1979,6 @@
             }
         })();
     </script>
+    <%@ include file="/WEB-INF/jspf/pwa-register.jspf" %>
 </body>
 </html>

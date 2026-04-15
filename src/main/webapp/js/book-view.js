@@ -191,11 +191,11 @@
 
         var label = document.createElement('div');
         label.className = 'add-page-label';
-        label.textContent = 'New Page';
+        label.textContent = 'Drop a new track';
 
         var hint = document.createElement('div');
         hint.className = 'add-page-hint';
-        hint.textContent = 'Drop a new track';
+        hint.textContent = 'Start your next entry';
 
         inner.appendChild(plus);
         inner.appendChild(label);

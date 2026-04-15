@@ -4,12 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jyrnyl</title>
+    <title>Jyrnyl — Record your life.</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="${pageContext.request.contextPath}/css/theme.css" rel="stylesheet">
+    <%@ include file="/WEB-INF/jspf/pwa-head.jspf" %>
     <style>
         body {
             background:
@@ -46,6 +47,12 @@
             border: 1px solid var(--border-warm);
             border-radius: 8px;
             pointer-events: none;
+        }
+        .login-logo {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 18px;
+            display: block;
         }
         .login-title {
             font-family: var(--font-serif);
@@ -96,6 +103,8 @@
 <body>
     <div class="login-wrap">
         <div class="login-card">
+            <img src="${pageContext.request.contextPath}/images/jyrnyl-logo-square.svg"
+                 alt="Jyrnyl logo" class="login-logo">
             <h1 class="login-title">Jyrnyl</h1>
             <hr class="login-rule">
             <p class="login-subtitle">Your personal liner notes</p>
@@ -111,5 +120,6 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <%@ include file="/WEB-INF/jspf/pwa-register.jspf" %>
 </body>
 </html>

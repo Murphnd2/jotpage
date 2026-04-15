@@ -5,13 +5,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jyrnyl &mdash; Voice</title>
+    <title>Jyrnyl &mdash; Voice Booth</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <link href="${pageContext.request.contextPath}/css/theme.css" rel="stylesheet">
+    <%@ include file="/WEB-INF/jspf/pwa-head.jspf" %>
     <style>
         body {
             background:
@@ -522,8 +523,8 @@
 
     <main class="voice-main">
         <div class="voice-header">
-            <h1>Voice</h1>
-            <div class="subhead">Speak or upload — we'll press it into journal pages.</div>
+            <h1>Voice Booth</h1>
+            <div class="subhead">Speak or upload — we'll press it to vinyl.</div>
         </div>
 
         <div class="voice-card">
@@ -764,5 +765,6 @@
             });
         })();
     </script>
+    <%@ include file="/WEB-INF/jspf/pwa-register.jspf" %>
 </body>
 </html>

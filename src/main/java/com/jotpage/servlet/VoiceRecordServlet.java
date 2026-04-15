@@ -273,14 +273,17 @@ public class VoiceRecordServlet extends HttpServlet {
             int pageCount = chunks.size();
             log("[voice] split into " + pageCount + " page(s)");
 
-            if (!isPro) {
+            // Enforce the free-tier monthly page cap. Pro users and free users
+            // still in their first calendar month get UNLIMITED and skip this.
+            int monthlyLimit = TierCheck.getMonthlyPageLimit(user);
+            if (monthlyLimit != TierCheck.UNLIMITED) {
                 try {
                     UsageRecord usage = usageDao.findOrCreateCurrentMonth(user.getId());
                     int alreadyThisMonth = usage == null ? 0 : usage.getPagesCreated();
-                    if (alreadyThisMonth + pageCount > TierCheck.FREE_PAGE_LIMIT) {
+                    if (alreadyThisMonth + pageCount > monthlyLimit) {
                         markJobFailed(job, "Page limit reached");
                         writeJsonError(resp, HttpServletResponse.SC_FORBIDDEN,
-                                "You've reached this month's " + TierCheck.FREE_PAGE_LIMIT
+                                "You've reached this month's " + monthlyLimit
                                         + "-page limit on the free tier. "
                                         + "Upgrade to Pro for unlimited pages.");
                         return;

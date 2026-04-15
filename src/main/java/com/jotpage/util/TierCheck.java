@@ -2,6 +2,10 @@ package com.jotpage.util;
 
 import com.jotpage.model.User;
 
+import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.time.ZoneId;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -10,12 +14,13 @@ import java.util.Set;
  * Pure feature/limit gatekeeper for the free/pro tier split.
  *
  * Free tier limits:
- *   - 50 pages maximum (lifetime)
+ *   - Month 1 (the calendar month the user was created): unlimited pages
+ *   - Month 2+: 20 pages per calendar month
  *   - 5 custom templates maximum
  *   - 1 AI processing trial per mode
- *   - No page deletion
  *   - No export/download
  *   - Verbatim voice transcription is free
+ *   - Page deletion is allowed on all tiers
  *
  * Pro tier: everything unlimited.
  *
@@ -28,12 +33,15 @@ public final class TierCheck {
     public static final String FEATURE_AI_PROCESSING = "ai_processing";
     public static final String FEATURE_CUSTOM_TEMPLATES = "custom_templates";
     public static final String FEATURE_UNLIMITED_PAGES = "unlimited_pages";
-    public static final String FEATURE_DELETE = "delete_page";
     public static final String FEATURE_EXPORT = "export";
 
-    public static final int FREE_PAGE_LIMIT = 50;
+    /** Monthly page cap for free users after their first calendar month. */
+    public static final int FREE_MONTHLY_PAGE_LIMIT = 20;
     public static final int FREE_CUSTOM_TEMPLATE_LIMIT = 5;
     public static final int FREE_AI_TRIAL_PER_MODE = 1;
+
+    /** Sentinel returned by {@link #getMonthlyPageLimit(User)} meaning "no cap". */
+    public static final int UNLIMITED = -1;
 
     private static volatile Set<String> proEmails;
 
@@ -69,7 +77,6 @@ public final class TierCheck {
             case FEATURE_AI_PROCESSING:
             case FEATURE_CUSTOM_TEMPLATES:
             case FEATURE_UNLIMITED_PAGES:
-            case FEATURE_DELETE:
             case FEATURE_EXPORT:
                 return false;
             default:
@@ -77,8 +84,41 @@ public final class TierCheck {
         }
     }
 
-    public static int getPageLimit(User user) {
-        return isPro(user) ? Integer.MAX_VALUE : FREE_PAGE_LIMIT;
+    /**
+     * Returns true if the user is still within their first calendar month
+     * (the month/year of their account creation matches the current month/year).
+     * Users with no createdAt timestamp are treated as NOT in their first month.
+     */
+    public static boolean isInFirstMonth(User user) {
+        if (user == null) return false;
+        Timestamp createdAt = user.getCreatedAt();
+        if (createdAt == null) return false;
+        YearMonth created = YearMonth.from(
+                createdAt.toLocalDateTime().toLocalDate());
+        YearMonth now = YearMonth.from(LocalDate.now(ZoneId.systemDefault()));
+        return created.equals(now);
+    }
+
+    /**
+     * Returns the monthly page-creation cap for this user.
+     *
+     * @return {@link #UNLIMITED} (-1) for Pro users or free users still in their
+     *         first calendar month; otherwise {@link #FREE_MONTHLY_PAGE_LIMIT}.
+     */
+    public static int getMonthlyPageLimit(User user) {
+        if (isPro(user)) return UNLIMITED;
+        if (isInFirstMonth(user)) return UNLIMITED;
+        return FREE_MONTHLY_PAGE_LIMIT;
+    }
+
+    /**
+     * Returns true if the user may create another page given the number of
+     * pages they have already created in the current calendar month.
+     */
+    public static boolean canCreatePage(User user, int pagesCreatedThisMonth) {
+        int limit = getMonthlyPageLimit(user);
+        if (limit == UNLIMITED) return true;
+        return pagesCreatedThisMonth < limit;
     }
 
     /**
@@ -96,10 +136,8 @@ public final class TierCheck {
                 return "You\u2019ve reached the " + FREE_CUSTOM_TEMPLATE_LIMIT
                         + "-template limit on the free tier. Upgrade to Jyrnyl Pro for unlimited templates.";
             case FEATURE_UNLIMITED_PAGES:
-                return "You\u2019ve reached the " + FREE_PAGE_LIMIT
-                        + "-page limit on the free tier. Upgrade to Jyrnyl Pro for unlimited pages.";
-            case FEATURE_DELETE:
-                return "Page deletion is a Jyrnyl Pro feature. Upgrade to delete pages.";
+                return "You\u2019ve reached the " + FREE_MONTHLY_PAGE_LIMIT
+                        + "-page monthly limit on the free tier. Upgrade to Jyrnyl Pro for unlimited pages.";
             case FEATURE_EXPORT:
                 return "Export is a Jyrnyl Pro feature. Upgrade to download your pages.";
             default:

@@ -9,9 +9,11 @@ import com.google.gson.JsonParser;
 import com.jotpage.dao.PageDao;
 import com.jotpage.dao.PageTagDao;
 import com.jotpage.dao.PageTypeDao;
+import com.jotpage.dao.UsageDao;
 import com.jotpage.model.Page;
 import com.jotpage.model.PageType;
 import com.jotpage.model.Tag;
+import com.jotpage.model.UsageRecord;
 import com.jotpage.model.User;
 import com.jotpage.util.TierCheck;
 
@@ -39,6 +41,7 @@ public class PageServlet extends HttpServlet {
     private final PageDao pageDao = new PageDao();
     private final PageTypeDao pageTypeDao = new PageTypeDao();
     private final PageTagDao pageTagDao = new PageTagDao();
+    private final UsageDao usageDao = new UsageDao();
     private final Gson gson = new Gson();
 
     @Override
@@ -230,13 +233,12 @@ public class PageServlet extends HttpServlet {
             return;
         }
 
-        // Enforce free-tier page limit
-        if (!TierCheck.isPro(user)) {
-            int count = pageDao.countByUserId(user.getId());
-            if (count >= TierCheck.FREE_PAGE_LIMIT) {
-                resp.sendRedirect(req.getContextPath() + "/app/dashboard?error=page_limit");
-                return;
-            }
+        // Enforce free-tier monthly page limit (Pro and first-month free users are unlimited).
+        UsageRecord usage = usageDao.findOrCreateCurrentMonth(user.getId());
+        int pagesThisMonth = usage == null ? 0 : usage.getPagesCreated();
+        if (!TierCheck.canCreatePage(user, pagesThisMonth)) {
+            resp.sendRedirect(req.getContextPath() + "/app/dashboard?error=page_limit");
+            return;
         }
 
         Page page = new Page();
@@ -248,6 +250,7 @@ public class PageServlet extends HttpServlet {
         page.setClosed(false);
 
         Page created = pageDao.create(page);
+        usageDao.incrementPages(user.getId(), 1);
         resp.sendRedirect(req.getContextPath() + "/app/page/" + created.getId());
     }
 
@@ -361,14 +364,6 @@ public class PageServlet extends HttpServlet {
             throws ServletException, IOException {
         User user = requireUser(req, resp);
         if (user == null) return;
-
-        if (!TierCheck.isPro(user)) {
-            resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
-            resp.setContentType("application/json");
-            resp.setCharacterEncoding("UTF-8");
-            resp.getWriter().write("{\"error\":\"" + TierCheck.requirePro(user, TierCheck.FEATURE_DELETE).replace("\"", "\\\"") + "\"}");
-            return;
-        }
 
         String pathInfo = req.getPathInfo();
         if (pathInfo == null || pathInfo.length() < 2) {

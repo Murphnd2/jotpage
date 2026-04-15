@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 800 800">
+<rect width="800" height="800" rx="0" fill="#3B2F2F"/>
+
+<!-- Record / page hybrid -->
+<circle cx="400" cy="370" r="220" fill="#1a1410"/>
+<!-- Outer grooves -->
+<circle cx="400" cy="370" r="200" fill="none" stroke="#2a2018" stroke-width="1"/>
+<circle cx="400" cy="370" r="180" fill="none" stroke="#2a2018" stroke-width="1"/>
+<circle cx="400" cy="370" r="160" fill="none" stroke="#2a2018" stroke-width="1"/>
+
+<!-- Grooves transitioning to page lines -->
+<path d="M190 280 Q310 270 400 280 Q530 295 610 280" fill="none" stroke="#4a3a2a" stroke-width="1"/>
+<path d="M185 316 Q310 306 400 316 Q530 330 615 316" fill="none" stroke="#4a3a2a" stroke-width="1"/>
+<path d="M182 352 Q310 342 400 352 Q530 365 618 352" fill="none" stroke="#4a3a2a" stroke-width="1"/>
+<path d="M185 388 Q310 378 400 388 Q530 400 615 388" fill="none" stroke="#4a3a2a" stroke-width="1"/>
+<path d="M190 424 Q310 414 400 424 Q530 436 610 424" fill="none" stroke="#4a3a2a" stroke-width="1"/>
+<path d="M200 460 Q310 450 400 460 Q510 470 600 460" fill="none" stroke="#4a3a2a" stroke-width="1"/>
+
+<!-- Ink writing flowing along a groove -->
+<path d="M260 388 Q310 375 380 382 Q430 390 480 378 Q530 370 580 380" fill="none" stroke="#C9A84C" stroke-width="3" stroke-linecap="round" opacity="0.85"/>
+
+<!-- Center label -->
+<circle cx="400" cy="370" r="60" fill="#7C3238"/>
+<circle cx="400" cy="370" r="56" fill="none" stroke="#9C4248" stroke-width="0.5"/>
+<circle cx="400" cy="370" r="7" fill="#1a1410"/>
+<!-- J on label -->
+<path d="M410 348 L410 382 Q410 400 396 400 Q382 400 378 390" fill="none" stroke="#FAF6F0" stroke-width="5" stroke-linecap="round"/>
+<path d="M396 348 L424 348" fill="none" stroke="#FAF6F0" stroke-width="4" stroke-linecap="round"/>
+
+<!-- Pen/needle dropping from top right -->
+<path d="M560 120 L475 295" stroke="#C9A84C" stroke-width="4" stroke-linecap="round"/>
+<path d="M475 295 L470 310 L480 310 Z" fill="#C9A84C"/>
+<!-- Contact point -->
+<circle cx="475" cy="312" r="4" fill="#C9A84C" opacity="0.8"/>
+<circle cx="467" cy="306" r="2" fill="#C9A84C" opacity="0.5"/>
+<circle cx="483" cy="308" r="2" fill="#C9A84C" opacity="0.5"/>
+<!-- Pivot point -->
+<circle cx="560" cy="120" r="12" fill="#5C4033" stroke="#C9A84C" stroke-width="2"/>
+
+<!-- Wordmark -->
+<text x="400" y="660" text-anchor="middle" font-family="'Playfair Display', Georgia, serif" font-size="72" font-weight="700" fill="#FAF6F0" letter-spacing="10">JYRNYL</text>
+<text x="400" y="700" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#C9A84C" letter-spacing="6">RECORD YOUR LIFE</text>
+</svg>

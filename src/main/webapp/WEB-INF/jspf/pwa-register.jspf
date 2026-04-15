@@ -1,0 +1,11 @@
+<%-- Jyrnyl service-worker registration. Include before </body> of every entry page. --%>
+<script>
+(function () {
+    if (!('serviceWorker' in navigator)) return;
+    window.addEventListener('load', function () {
+        navigator.serviceWorker
+            .register('${pageContext.request.contextPath}/sw.js', { scope: '${pageContext.request.contextPath}/' })
+            .catch(function (err) { console.warn('SW registration failed:', err); });
+    });
+})();
+</script>

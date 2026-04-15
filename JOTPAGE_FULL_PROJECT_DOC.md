@@ -130,9 +130,10 @@ anthropic.apiKey=...
 | Production (Linux) | `/var/lib/tomcat10/conf/jotpage.properties` | Auto via `{catalina.base}/conf/` |
 
 ### Key differences between environments
-- `google.redirectUri`: `http://localhost:8080/jotpage/oauth2callback` (local) vs `https://superiorstate.biz/jotpage/oauth2callback` (prod)
+- `google.redirectUri`: `http://localhost:8080/jotpage/oauth2callback` (local, WAR still deploys at `/jotpage/` on dev) vs `https://jyrnyl.com/oauth2callback` (prod, deployed as ROOT)
 - `db.username`: `root` (local) vs `jotpage` (prod)
 - `ffmpeg.path`: `C:\\ffmpeg\\bin` (local Windows) vs empty (prod Linux, ffmpeg on PATH)
+- `whisper.command`: `whisper` (local, on PATH) vs `/usr/local/bin/whisper` (prod, symlink to venv binary)
 
 ## Database
 
@@ -170,14 +171,58 @@ mysql -u root -p jotpage < src/main/resources/migrations/003_remove_calendar_tem
 
 ## Production Server
 
-- **Host:** superiorstate.biz
-- **URL:** https://superiorstate.biz/jotpage/
-- **OS:** Ubuntu/Debian (Acronis-managed)
-- **Tomcat:** /var/lib/tomcat10 (catalina.base)
-- **MySQL socket:** /var/run/mysqld/mysqld.sock
-- **MySQL users:** `jotpage` (app, scoped to jotpage DB), `root` (admin), `ams_app` (other apps on beta_ssa)
-- **Other databases on same server:** beta_ssa, beta_ssa_wasabi_verify, wave_commissions
-- **SSH requires:** `LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu` prefix for mysql/mysqldump commands
+- **Host:** jyrnyl.com
+- **Origin IP:** 66.179.248.54 (IONOS DCD VPS, Ubuntu 24.04 LTS)
+- **URL:** https://jyrnyl.com/ (deployed as ROOT context — no `/jotpage/` path prefix)
+- **DNS/TLS:** Cloudflare proxied (orange cloud), SSL mode **Full (Strict)** with a Cloudflare Origin Certificate installed on the box
+- **Reverse proxy:** nginx 1.24 terminates TLS and proxies to Tomcat on `127.0.0.1:8080`
+  - Config: `/etc/nginx/sites-available/jyrnyl`
+  - Origin cert: `/etc/nginx/ssl/jyrnyl.crt` (15-year Cloudflare cert for `*.jyrnyl.com` + `jyrnyl.com`)
+  - Origin key:  `/etc/nginx/ssl/jyrnyl.key` (mode 600)
+- **Tomcat:** 10.1.16 (Ubuntu package), CATALINA_BASE=`/var/lib/tomcat10`, CATALINA_HOME=`/usr/share/tomcat10`
+  - WAR deployed as `/var/lib/tomcat10/webapps/ROOT.war` (context path `/`)
+  - JAVA_OPTS set in `/etc/default/tomcat10`: `-Xms256m -Xmx1024m -XX:+UseG1GC`
+- **Java:** OpenJDK 17 at `/usr/lib/jvm/java-17-openjdk-amd64`
+- **MySQL 8** (Ubuntu package)
+  - Socket: `/var/run/mysqld/mysqld.sock`
+  - App user: `jotpage@localhost` (scoped to `jotpage` DB only)
+  - Root: `auth_socket` (no password — OS `root` user authenticates via socket)
+- **Whisper:** venv at `/opt/whisper/venv` (owned by `deploy`), binary symlinked to `/usr/local/bin/whisper`
+  - Tomcat-user model cache pre-populated at `/var/lib/tomcat/.cache/whisper/base.pt`
+- **FFmpeg:** `/usr/bin/ffmpeg` (system package, on PATH)
+- **Firewall (UFW):** allow 22/80/443, deny everything else
+- **Timezone:** America/Chicago
+- **User accounts:**
+  - `root` — initial setup only, password-only SSH disabled in favor of key-based
+  - `deploy` — sudoer, handles all day-to-day ops and scp target
+  - `tomcat` — app runtime (home `/var/lib/tomcat`, shell nologin)
+- **SSH requires:** `LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu` prefix for `mysql`/`mysqldump` commands (Ubuntu 24.04 ships an ABI that trips the MySQL client without this)
+
+## Deploy Process
+
+Build locally, scp, drop into Tomcat webapps dir as `ROOT.war`:
+
+```bash
+# On Windows workstation
+cd C:\Users\kevinmurphy.SUPERIORSTATE\IdeaProjects\jotpage
+mvn clean package
+scp target\jotpage.war deploy@66.179.248.54:/home/deploy/jyrnyl/
+
+# On server (deploy user)
+sudo cp /home/deploy/jyrnyl/jotpage.war /var/lib/tomcat10/webapps/ROOT.war
+sudo chown tomcat:tomcat /var/lib/tomcat10/webapps/ROOT.war
+# Tomcat auto-redeploys in ~1s; no restart required
+```
+
+Watch logs during deploy:
+```bash
+sudo journalctl -u tomcat10 -f --since "30 seconds ago"
+```
+
+After deploy, users may need a hard-refresh (Ctrl+Shift+R) once — the service worker bumps its cache version on each release so most users pick up changes automatically on next visit.
+
+### Note on the WAR artifact name
+`pom.xml` still builds `jotpage.war`; it's renamed to `ROOT.war` at deploy time. If that becomes annoying, change the `<finalName>` in `pom.xml` to `ROOT`.
 
 ## Canvas / Drawing Engine
 
@@ -265,8 +310,11 @@ mysql -u root -p jotpage < src/main/resources/migrations/003_remove_calendar_tem
 - **Custom** (pro): user-provided prompt
 
 ### Tier system
-- Free: 50 pages/month, verbatim mode only, system templates only
+- Free: Month 1 unlimited, then 20 pages/month, deletion allowed, verbatim mode only, system templates only, up to 5 custom templates
 - Pro: unlimited pages, all AI modes, custom templates, Whisper transcription
+- "Month 1" = the calendar month the user's account was created (`user.created_at` year+month matches the current year+month)
+- Page-creation gating uses `TierCheck.canCreatePage(user, pagesThisMonth)` against `usage_tracking.pages_created` for the current month
+- Page deletion is allowed on ALL tiers
 - Checked via `TierCheck.java` (reads `user.tier` from session)
 - Usage tracked monthly in `usage_tracking` table
 
@@ -306,10 +354,43 @@ mysql -u root -p jotpage < src/main/resources/migrations/003_remove_calendar_tem
 - 44px+ touch targets throughout
 - Responsive: desktop two-column, mobile single-column
 
+## Brand Identity
+
+### Name & tagline
+- **Name:** Jyrnyl (pronounced "Journal")
+- **Tagline:** Record your life.
+- **Pitch:** Your personal liner notes. Drop the needle on a new thought.
+
+### Brand assets
+All in `src/main/webapp/images/`:
+- `jyrnyl-logo-square.svg` — vinyl record with J label, pen/needle, "JYRNYL / RECORD YOUR LIFE" (800×800 source, SVG scales to any size). **Used as the primary logo in:** login page (120px), offline page (96px), navbar-brand (28px via CSS background-image), SVG favicon, manifest icon.
+- `jyrnyl-logo-800.png`, `jyrnyl-logo-400.png` — raster fallbacks for older clients / manifest icons.
+- `jyrnyl-banner.svg`, `jyrnyl-banner-1500.png` — 1500×500 wordmark banner (record on left, wordmark on right). Not yet used in-app; reserved for marketing/social.
+
+### Vinyl metaphor vocabulary
+This is the user-facing language; apply consistently in any new UI copy.
+
+| Term | Meaning | Where it appears |
+|---|---|---|
+| Drop the needle | Start a new entry / CTA | Login footer, dashboard subhead |
+| Track | A single page | Add-page placeholder ("Drop a new track") |
+| Liner notes | Journal entries / the words on a page | Login subtitle, manifest description |
+| Album | The user's full journal | Editor back-button: "Back to your Jyrnyl" |
+| B-side | Private / locked pages (future) | Not yet in UI |
+| Studio | The editor / canvas workspace | Editor `<title>` |
+| Voice Booth | The voice-recording page | Voice-record `<title>` and heading |
+| Press it to vinyl | Transcribe + save voice entry | Voice-record subhead |
+
+### Non-user-facing vs user-facing
+Do NOT rename Java packages, servlet mappings, DB columns, or any internal identifier. The repo name, package name, and WAR artifact all remain `jotpage` — this is a cosmetic/brand layer on top, not a code rename.
+
 ## Known issues / TODOs
-- [ ] Deploy latest WAR to production (secrets externalization done, schema needs loading)
-- [ ] Test Google OAuth on production after deploy
+- [x] ~~Deploy latest WAR to production~~ — done (Jyrnyl live on jyrnyl.com at 66.179.248.54 as of 2026-04-15)
+- [x] ~~Test Google OAuth on production after deploy~~ — working
+- [ ] Rotate production secrets exposed during chat setup (Google client secret, Anthropic API key, MySQL `jotpage` password)
 - [ ] Stripe integration for Pro tier (subscription table exists, no webhook handler yet)
+- [ ] Automated DB backups (cron `mysqldump` → `/home/deploy/backups/` with retention)
+- [ ] Uptime monitoring / alerting (no external check configured yet)
 - [ ] Book view thumbnails for custom-background pages show blank (no base64 in dashboard payload)
 - [ ] Pre-scale-fix voice pages have tiny fontSize in DB (legacy compat handles display, but editing shows wrong dropdown selection)
 - [ ] Touch drag-to-reorder in list view (HTML5 DnD doesn't support touch natively)

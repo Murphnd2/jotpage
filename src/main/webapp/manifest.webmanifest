@@ -1,0 +1,51 @@
+{
+  "name": "Jyrnyl — Record your life.",
+  "short_name": "Jyrnyl",
+  "description": "Your personal liner notes. Drop the needle on a new thought.",
+  "start_url": "/app/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#faf6f0",
+  "theme_color": "#5c4033",
+  "lang": "en",
+  "categories": ["productivity", "lifestyle", "utilities"],
+  "icons": [
+    {
+      "src": "/images/jyrnyl-logo-square.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/images/jyrnyl-logo-400.png",
+      "sizes": "400x400",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/images/jyrnyl-logo-800.png",
+      "sizes": "800x800",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Drop a new track",
+      "short_name": "New track",
+      "url": "/app/dashboard?action=new"
+    },
+    {
+      "name": "Voice record",
+      "short_name": "Record",
+      "url": "/app/voice-record"
+    }
+  ]
+}

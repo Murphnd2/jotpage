@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="500" viewBox="0 0 1500 500">
+<rect width="1500" height="500" fill="#3B2F2F"/>
+
+<!-- Record on the left -->
+<circle cx="250" cy="250" r="180" fill="#1a1410"/>
+<circle cx="250" cy="250" r="160" fill="none" stroke="#2a2018" stroke-width="0.8"/>
+<circle cx="250" cy="250" r="140" fill="none" stroke="#2a2018" stroke-width="0.8"/>
+<circle cx="250" cy="250" r="120" fill="none" stroke="#2a2018" stroke-width="0.8"/>
+
+<!-- Grooves to lines transition -->
+<path d="M100 200 Q200 193 250 200 Q350 210 400 200 Q500 188 650 200 L1350 200" fill="none" stroke="#4a3a2a" stroke-width="0.8"/>
+<path d="M90 230 Q200 223 250 230 Q350 240 400 230 Q500 218 650 230 L1350 230" fill="none" stroke="#4a3a2a" stroke-width="0.8"/>
+<path d="M85 260 Q200 253 250 260 Q350 270 400 260 Q500 248 650 260 L1350 260" fill="none" stroke="#4a3a2a" stroke-width="0.8"/>
+<path d="M90 290 Q200 283 250 290 Q350 300 400 290 Q500 278 650 290 L1350 290" fill="none" stroke="#4a3a2a" stroke-width="0.8"/>
+<path d="M100 320 Q200 313 250 320 Q350 330 400 320 Q500 308 650 320 L1350 320" fill="none" stroke="#4a3a2a" stroke-width="0.8"/>
+
+<!-- Ink writing along groove line -->
+<path d="M500 260 Q550 250 620 255 Q680 262 750 254 Q820 248 880 256" fill="none" stroke="#C9A84C" stroke-width="2.5" stroke-linecap="round" opacity="0.8"/>
+
+<!-- Center label -->
+<circle cx="250" cy="250" r="50" fill="#7C3238"/>
+<circle cx="250" cy="250" r="46" fill="none" stroke="#9C4248" stroke-width="0.4"/>
+<circle cx="250" cy="250" r="6" fill="#1a1410"/>
+<!-- J on label -->
+<path d="M258 235 L258 260 Q258 272 248 272 Q240 272 237 265" fill="none" stroke="#FAF6F0" stroke-width="4" stroke-linecap="round"/>
+<path d="M247 235 L269 235" fill="none" stroke="#FAF6F0" stroke-width="3" stroke-linecap="round"/>
+
+<!-- Pen/needle -->
+<path d="M420 100 L355 218" stroke="#C9A84C" stroke-width="3" stroke-linecap="round"/>
+<path d="M355 218 L352 228 L358 228 Z" fill="#C9A84C"/>
+<circle cx="355" cy="230" r="3" fill="#C9A84C" opacity="0.7"/>
+<circle cx="420" cy="100" r="9" fill="#5C4033" stroke="#C9A84C" stroke-width="1.5"/>
+
+<!-- Wordmark right side -->
+<text x="900" y="265" text-anchor="middle" font-family="'Playfair Display', Georgia, serif" font-size="88" font-weight="700" fill="#FAF6F0" letter-spacing="12">JYRNYL</text>
+<text x="900" y="310" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="24" fill="#C9A84C" letter-spacing="8">RECORD YOUR LIFE</text>
+</svg>

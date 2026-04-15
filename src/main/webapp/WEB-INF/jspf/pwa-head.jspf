@@ -1,0 +1,14 @@
+<%-- Jyrnyl PWA head fragment. Include inside <head> of every entry page. --%>
+<link rel="manifest" href="${pageContext.request.contextPath}/manifest.webmanifest">
+<meta name="theme-color" content="#5c4033">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Jyrnyl">
+<meta name="application-name" content="Jyrnyl">
+<%-- Favicons: SVG first for modern browsers (crisp at any size), PNG fallbacks for older browsers and iOS. --%>
+<link rel="icon" type="image/svg+xml" href="${pageContext.request.contextPath}/images/jyrnyl-logo-square.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="${pageContext.request.contextPath}/icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="${pageContext.request.contextPath}/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="${pageContext.request.contextPath}/icons/icon-512.png">
+<link rel="apple-touch-icon" sizes="400x400" href="${pageContext.request.contextPath}/images/jyrnyl-logo-400.png">

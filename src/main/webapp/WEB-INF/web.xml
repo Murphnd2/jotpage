@@ -11,6 +11,12 @@
          in jotpage.properties, loaded by com.jotpage.util.AppConfig.
          See src/main/resources/jotpage.properties.example for the template. -->
 
+    <!-- PWA MIME types. -->
+    <mime-mapping>
+        <extension>webmanifest</extension>
+        <mime-type>application/manifest+json</mime-type>
+    </mime-mapping>
+
     <filter>
         <filter-name>AuthFilter</filter-name>
         <filter-class>com.jotpage.servlet.AuthFilter</filter-class>
@@ -18,6 +24,21 @@
     <filter-mapping>
         <filter-name>AuthFilter</filter-name>
         <url-pattern>/app/*</url-pattern>
+    </filter-mapping>
+
+    <!-- Ensure service worker and manifest are never cached by the browser.
+         Without this, users get stuck on stale service worker versions. -->
+    <filter>
+        <filter-name>NoCacheFilter</filter-name>
+        <filter-class>com.jotpage.servlet.NoCacheFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>NoCacheFilter</filter-name>
+        <url-pattern>/sw.js</url-pattern>
+    </filter-mapping>
+    <filter-mapping>
+        <filter-name>NoCacheFilter</filter-name>
+        <url-pattern>/manifest.webmanifest</url-pattern>
     </filter-mapping>
 
     <servlet>
