@@ -22,18 +22,19 @@
         .login-wrap {
             min-height: 100vh;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             padding: 24px;
+            gap: 20px;
         }
         .login-card {
             background: var(--bg-card);
             border: 1px solid var(--border-warm);
             border-radius: var(--radius-lg);
             box-shadow: var(--shadow-paper);
-            padding: 56px 56px 48px;
-            text-align: center;
-            max-width: 460px;
+            padding: 18px;
+            max-width: 420px;
             width: 100%;
             position: relative;
         }
@@ -49,34 +50,14 @@
             pointer-events: none;
         }
         .login-logo {
-            width: 120px;
-            height: 120px;
-            margin: 0 auto 18px;
+            /* Fill the area inside the inner border frame */
+            position: relative;
             display: block;
-        }
-        .login-title {
-            font-family: var(--font-serif);
-            font-weight: 700;
-            font-size: 3.4rem;
-            line-height: 1;
-            margin: 0 0 10px;
-            color: var(--accent-brown);
-            letter-spacing: -0.02em;
-        }
-        .login-rule {
-            width: 64px;
-            height: 2px;
-            background: var(--accent-gold);
-            border: 0;
-            margin: 16px auto 20px;
-            opacity: 0.8;
-        }
-        .login-subtitle {
-            color: var(--text-muted);
-            font-family: var(--font-serif);
-            font-style: italic;
-            font-size: 1.15rem;
-            margin-bottom: 36px;
+            width: calc(100% - 36px);
+            height: auto;
+            margin: 18px auto;
+            border-radius: 8px;
+            z-index: 1;
         }
         .google-btn {
             display: inline-flex;
@@ -92,31 +73,21 @@
             width: 20px;
             height: 20px;
         }
-        .login-footer {
-            margin-top: 28px;
-            color: var(--text-muted);
-            font-size: 0.85rem;
-            font-style: italic;
-        }
     </style>
 </head>
 <body>
     <div class="login-wrap">
         <div class="login-card">
             <img src="${pageContext.request.contextPath}/images/jyrnyl-logo-square.svg"
-                 alt="Jyrnyl logo" class="login-logo">
-            <h1 class="login-title">Jyrnyl</h1>
-            <hr class="login-rule">
-            <p class="login-subtitle">Your personal liner notes</p>
-            <a id="googleSignInBtn" class="btn btn-primary btn-lg google-btn"
-               href="${pageContext.request.contextPath}/login">
-                <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                    <path fill="#fff" d="M44.5 20H24v8.5h11.8C34.7 33.1 30 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.7 1.1 7.8 2.9l6-6C34.4 5.5 29.5 3.5 24 3.5 12.7 3.5 3.5 12.7 3.5 24S12.7 44.5 24 44.5c11 0 20-8 20-20 0-1.5-.2-3-.5-4.5z"/>
-                </svg>
-                Sign in with Google
-            </a>
-            <div class="login-footer">Drop the needle on a new thought</div>
+                 alt="Jyrnyl — Record your life." class="login-logo">
         </div>
+        <a id="googleSignInBtn" class="btn btn-primary btn-lg google-btn"
+           href="${pageContext.request.contextPath}/login">
+            <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path fill="#fff" d="M44.5 20H24v8.5h11.8C34.7 33.1 30 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.7 1.1 7.8 2.9l6-6C34.4 5.5 29.5 3.5 24 3.5 12.7 3.5 3.5 12.7 3.5 24S12.7 44.5 24 44.5c11 0 20-8 20-20 0-1.5-.2-3-.5-4.5z"/>
+            </svg>
+            Sign in with Google
+        </a>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

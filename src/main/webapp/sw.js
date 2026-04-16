@@ -16,7 +16,7 @@
  *     caches on activation.
  */
 
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v4';
 const STATIC_CACHE  = `jyrnyl-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `jyrnyl-runtime-${CACHE_VERSION}`;
 

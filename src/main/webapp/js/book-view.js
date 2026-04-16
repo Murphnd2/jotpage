@@ -6,6 +6,11 @@
  * and cached in memory. The current spread and one spread on either side
  * are prefetched so navigation feels instant.
  *
+ * Landing behavior (Phase 3): on initial load the user sees only the cover,
+ * centered and scaled up on the leather desk background. Tapping the cover
+ * or swiping left "opens" the book — navigating to the first data spread.
+ * The bubble-menu is the only visible chrome until the book is opened.
+ *
  * Exposes window.bookView = { setFilter(ids) -> {shown,total}, refresh() }
  * so dashboard.jsp can drive it from the shared tag-filter handler.
  */
@@ -14,16 +19,19 @@
 
     var CANVAS_W = 1480;
     var CANVAS_H = 2100;
-    var THUMB_W = 296;   // A5-ratio * 2 for crisp rendering on HiDPI
+    var THUMB_W = 296;
     var THUMB_H = 420;
 
     var ctx = window.CONTEXT_PATH || '';
+    var logoUrl = window.LOGO_URL || (ctx + '/images/jyrnyl-logo-square.svg');
+    var bookUser = window.BOOK_USER || {};
     var allPages = Array.isArray(window.BOOK_PAGES) ? window.BOOK_PAGES.slice() : [];
     var filteredPages = allPages.slice();
     var activeTagIds = [];
-    var currentSpread = 0; // will be set to last spread once we know the count
-    var inkCache = {};     // pageId -> fetched detail
-    var inFlight = {};     // pageId -> Promise to avoid duplicate fetches
+    var currentSpread = 0;
+    var inkCache = {};
+    var inFlight = {};
+    var coverLanding = true;   // true until the user "opens" the book
 
     var bookEl = document.getElementById('book');
     var leftPageEl = document.getElementById('bookLeftPage');
@@ -34,6 +42,7 @@
     var lastBtn = document.getElementById('bookLast');
     var statusEl = document.getElementById('bookStatus');
     var stageEl = document.getElementById('bookStage');
+    var tapHintEl = document.getElementById('coverTapHint');
 
     if (!bookEl || !leftPageEl || !rightPageEl) return;
 
@@ -44,25 +53,10 @@
         return window.innerWidth < 720;
     }
 
-    /**
-     * Desktop (two-up, traditional book):
-     *   spread 0 = cover (book closed)
-     *   spread 1 = [blank, page 1]               (inside front cover | first page)
-     *   spread 2 = [page 2, page 3]
-     *   spread 3 = [page 4, page 5]
-     *   ...
-     *   trailing spread holds an "Add Page" placeholder at slot (N+1),
-     *   so the book always ends with a visible "+ New Page" affordance.
-     *
-     * Mobile (single-up):
-     *   spread 0 = cover
-     *   spread 1..N = page (k-1)
-     *   spread N+1 = Add Page
-     */
     function spreadCount() {
         var n = filteredPages.length;
-        if (isMobile()) return n + 2;               // cover + N pages + add
-        return 1 + Math.ceil((n + 2) / 2);          // cover + data spreads (+ add slot)
+        if (isMobile()) return n + 2;
+        return 1 + Math.ceil((n + 2) / 2);
     }
 
     function slotsForSpread(idx) {
@@ -72,11 +66,8 @@
             if (idx - 1 >= n) return { mobile: true, rightAdd: true };
             return { mobile: true, rightPageIdx: idx - 1 };
         }
-        var slotLeft = 2 * (idx - 1);       // 0,2,4,...
-        var slotRight = slotLeft + 1;       // 1,3,5,...
-        // slot 0 = blank inside front cover
-        // slot 1..N = page index 0..N-1
-        // slot N+1 = Add Page
+        var slotLeft = 2 * (idx - 1);
+        var slotRight = slotLeft + 1;
         return {
             leftPageIdx: slotLeft === 0 ? -1 : slotLeft - 1,
             rightPageIdx: slotRight - 1,
@@ -86,20 +77,18 @@
     }
 
     /**
-     * Start position: the spread that contains the newest real page, so the
-     * user lands on their latest entries instead of on the Add Page slot.
+     * Post-cover starting spread. Used after the user opens the book from
+     * the cover landing; lands on the newest real page.
      */
     function lastRealSpreadIndex() {
         var n = filteredPages.length;
-        if (n === 0) return 0; // just the cover
-        if (isMobile()) return n; // cover=0, pages start at 1, newest at n
-        // Desktop: newest page index n-1 lives at slot n, which is in spread
-        // floor(n / 2) + 1.
+        if (n === 0) return 1; // first blank/add spread
+        if (isMobile()) return n;
         return Math.floor(n / 2) + 1;
     }
 
     // ------------------------------------------------------------------
-    // Fetching page render data
+    // Fetching
     // ------------------------------------------------------------------
     function fetchPage(pageId) {
         if (inkCache[pageId]) return Promise.resolve(inkCache[pageId]);
@@ -146,23 +135,47 @@
     }
 
     // ------------------------------------------------------------------
-    // Rendering a single page (cover, blank, or ink)
+    // Cover render — gold-stamped vinyl emblem + user footer
     // ------------------------------------------------------------------
     function renderCover(pageEl, side) {
         pageEl.innerHTML = '';
         pageEl.className = 'book-page ' + side + ' cover-page';
-        var title = document.createElement('div');
-        title.className = 'cover-title';
-        title.textContent = 'My Jyrnyl';
-        var flourish = document.createElement('div');
-        flourish.className = 'cover-flourish';
-        flourish.textContent = '\u2756 \u2756 \u2756';
-        var subtitle = document.createElement('div');
-        subtitle.className = 'cover-subtitle';
-        subtitle.textContent = 'Drop the needle on a new thought';
-        pageEl.appendChild(title);
-        pageEl.appendChild(flourish);
-        pageEl.appendChild(subtitle);
+
+        var emblem = document.createElement('div');
+        emblem.className = 'cover-emblem';
+        var img = document.createElement('img');
+        img.src = logoUrl;
+        img.alt = 'Jyrnyl — Record your life.';
+        img.draggable = false;
+        emblem.appendChild(img);
+        pageEl.appendChild(emblem);
+
+        var footer = document.createElement('div');
+        footer.className = 'cover-footer';
+
+        if (bookUser.avatarUrl) {
+            var avatar = document.createElement('img');
+            avatar.className = 'cover-avatar';
+            avatar.src = bookUser.avatarUrl;
+            avatar.alt = '';
+            avatar.referrerPolicy = 'no-referrer';
+            avatar.draggable = false;
+            footer.appendChild(avatar);
+        }
+        if (bookUser.displayName) {
+            var name = document.createElement('span');
+            name.className = 'cover-name';
+            name.textContent = bookUser.displayName;
+            footer.appendChild(name);
+        }
+        var count = document.createElement('span');
+        count.className = 'cover-count';
+        var n = typeof bookUser.pageCount === 'number'
+            ? bookUser.pageCount : allPages.length;
+        count.textContent = '\u00b7 ' + n + (n === 1 ? ' track' : ' tracks');
+        footer.appendChild(count);
+
+        pageEl.appendChild(footer);
     }
 
     function renderBlank(pageEl, side) {
@@ -172,9 +185,10 @@
     }
 
     function openNewPageModal() {
+        // The bubble menu owns this modal now; dispatch the shared event.
+        document.dispatchEvent(new CustomEvent('jyrnyl:open-new-page-modal'));
         var modalEl = document.getElementById('newPageModal');
-        if (!modalEl) return;
-        if (window.bootstrap && window.bootstrap.Modal) {
+        if (modalEl && window.bootstrap && window.bootstrap.Modal) {
             window.bootstrap.Modal.getOrCreateInstance(modalEl).show();
         }
     }
@@ -235,7 +249,6 @@
             renderBlank(pageEl, side);
             return;
         }
-        // Schedule the fetch so on-screen pages get populated quickly
         fetchPage(meta.id).then(function (data) {
             try {
                 paintPage(pageEl, side, meta, data);
@@ -247,7 +260,6 @@
             console.error('[book-view] fetch failed for page', meta.id, err);
             renderEmpty(pageEl, side, 'Unable to load');
         });
-        // Immediate skeleton while we wait
         renderLoading(pageEl, side);
     }
 
@@ -293,11 +305,6 @@
     // ------------------------------------------------------------------
     // Miniature canvas renderer
     // ------------------------------------------------------------------
-    // dataUrl -> { img, ready, listeners: [fn] }
-    // Never call onReady synchronously on a cache hit — the caller of
-    // loadCustomBg already checks img.complete and draws in that case, so
-    // firing onReady here would cause drawThumbnail → drawBackground →
-    // loadCustomBg → onReady → drawThumbnail... infinite recursion.
     var imageCache = {};
     function loadCustomBg(dataUrl, onReady) {
         var entry = imageCache[dataUrl];
@@ -336,18 +343,14 @@
         var scaleY = canvas.height / CANVAS_H;
 
         c.save();
-        // Fill white
         c.fillStyle = '#fffdf7';
         c.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Background
         c.save();
         c.scale(scaleX, scaleY);
         drawBackground(c, data.backgroundType, data.backgroundData, function () {
-            // Custom bg async re-paint
             drawThumbnail(canvas, data);
         });
-        // Image overlays (beneath strokes)
         if (Array.isArray(data.imageLayers)) {
             data.imageLayers.forEach(function (il) {
                 if (!il.src) return;
@@ -364,52 +367,32 @@
                 }
             });
         }
-        // Strokes
         var ink = data.inkData;
         if (ink && Array.isArray(ink.strokes)) {
-            ink.strokes.forEach(function (stroke) {
-                drawStroke(c, stroke);
-            });
+            ink.strokes.forEach(function (stroke) { drawStroke(c, stroke); });
         }
         c.restore();
 
-        // Text layers — render a miniature preview of the actual text
-        // content so voice-transcribed pages read as text, not as a gray
-        // placeholder. Stored fontSize is in canvas pixels (post-scale-fix),
-        // so we convert to thumbnail pixels with scaleY. Pages saved before
-        // the scale fix stored the raw UI point size; detect those (fontSize
-        // < 20) and scale them up.
         var layers = data.textLayers;
         if (Array.isArray(layers) && layers.length) {
             c.save();
             layers.forEach(function (tb) {
                 if (!tb || typeof tb.x !== 'number') return;
-
                 var x = tb.x * scaleX;
                 var y = tb.y * scaleY;
                 var w = Math.max(4, (tb.width || 1380) * scaleX);
-
                 var storedFont = (typeof tb.fontSize === 'number' && tb.fontSize > 0)
-                        ? tb.fontSize
-                        : 160;
-                if (storedFont < 20) storedFont *= 10; // legacy compat
+                        ? tb.fontSize : 160;
+                if (storedFont < 20) storedFont *= 10;
                 var fontPx = Math.max(5, storedFont * scaleY);
                 var lineHeight = fontPx * 1.25;
-
                 var blockH = (typeof tb.height === 'number' && tb.height > 0)
                         ? tb.height * scaleY
                         : Math.max(lineHeight, canvas.height - y - 2);
                 var maxY = y + blockH;
+                var color = (typeof tb.color === 'string' && tb.color) ? tb.color : '#2e2420';
+                var rawText = (tb.text == null ? '' : String(tb.text)).replace(/\r/g, '');
 
-                var color = (typeof tb.color === 'string' && tb.color)
-                        ? tb.color
-                        : '#2e2420';
-
-                var rawText = (tb.text == null ? '' : String(tb.text))
-                        .replace(/\r/g, '');
-
-                // Skeleton fallback when there's nothing to render or the
-                // font would be too small to be readable at thumbnail scale.
                 if (!rawText.trim() || fontPx < 6) {
                     drawTextSkeleton(c, x, y, w, blockH, Math.max(lineHeight, 8));
                     return;
@@ -426,8 +409,6 @@
                     if (cursorY + lineHeight > maxY) break;
                     var raw = rawLines[li];
                     if (!raw) {
-                        // Blank line = paragraph break. Give it a little
-                        // vertical breathing room but not a full line.
                         cursorY += lineHeight * 0.6;
                         continue;
                     }
@@ -453,10 +434,6 @@
                         cursorY += lineHeight;
                     }
                 }
-
-                // If we couldn't render anything (e.g. every word was wider
-                // than the block, or the block was too small), fall back to
-                // the skeleton so we never show an empty block.
                 if (!rendered) {
                     drawTextSkeleton(c, x, y, w, blockH, Math.max(lineHeight, 8));
                 }
@@ -466,11 +443,6 @@
         c.restore();
     }
 
-    /**
-     * Draws a stack of horizontal warm-gray bars inside the given box — used
-     * as a "text preview skeleton" when we can't render actual text (empty
-     * block, oversized words, or font too small to be readable).
-     */
     function drawTextSkeleton(c, x, y, w, h, lineHeight) {
         if (w <= 0 || h <= 0) return;
         var rowH = Math.max(3, lineHeight * 0.38);
@@ -486,7 +458,7 @@
             c.fillRect(x, cursorY, Math.max(3, lw), rowH);
             cursorY += stride;
             idx++;
-            if (idx > 60) break; // safety
+            if (idx > 60) break;
         }
         c.restore();
     }
@@ -589,7 +561,7 @@
                     c.stroke();
                 }
                 break;
-            default: /* blank */ break;
+            default: break;
         }
     }
 
@@ -599,7 +571,6 @@
     function renderCurrentSpread() {
         currentSpread = Math.max(0, Math.min(currentSpread, spreadCount() - 1));
 
-        // Zero-page filter case: only cover is available
         if (filteredPages.length === 0 && activeTagIds.length > 0) {
             if (bookEl) bookEl.classList.remove('cover-only');
             renderBlank(leftPageEl, 'left-page');
@@ -614,11 +585,15 @@
         if (slots.cover) {
             if (bookEl) bookEl.classList.add('cover-only');
             renderCover(rightPageEl, 'right-page');
+            // Wire up "tap the cover to open"
+            rightPageEl.onclick = function (e) {
+                e.preventDefault();
+                openBook();
+            };
             updateNavAndStatus();
             return;
         }
 
-        // Any non-cover spread: restore the normal two-page layout
         if (bookEl) bookEl.classList.remove('cover-only');
 
         if (slots.mobile) {
@@ -634,7 +609,6 @@
             return;
         }
 
-        // Desktop spread — left side
         if (slots.leftAdd) {
             renderAddPage(leftPageEl, 'left-page');
         } else if (slots.leftPageIdx < 0) {
@@ -645,7 +619,6 @@
             renderPage(leftPageEl, 'left-page', filteredPages[slots.leftPageIdx]);
         }
 
-        // Desktop spread — right side
         if (slots.rightAdd) {
             renderAddPage(rightPageEl, 'right-page');
         } else if (slots.rightPageIdx >= filteredPages.length) {
@@ -668,8 +641,8 @@
 
         if (currentSpread === 0) {
             statusEl.textContent = filteredPages.length === 0 && activeTagIds.length === 0
-                ? 'Your journal is empty \u2014 start a new page.'
-                : 'Front cover';
+                ? 'Your journal is empty \u2014 tap to start.'
+                : '';
             return;
         }
         if (filteredPages.length === 0) {
@@ -680,7 +653,6 @@
         var slots = slotsForSpread(currentSpread);
         var n = filteredPages.length;
 
-        // Spreads whose only meaningful content is the Add Page slot
         if (slots.mobile && slots.rightAdd) {
             statusEl.textContent = 'Start a new page';
             return;
@@ -712,21 +684,55 @@
     }
 
     // ------------------------------------------------------------------
-    // Navigation
+    // Navigation + cover landing
     // ------------------------------------------------------------------
+    function exitCoverLanding() {
+        if (!coverLanding) return;
+        coverLanding = false;
+        document.body.classList.remove('cover-landing-state');
+        if (stageEl) stageEl.classList.remove('cover-landing');
+    }
+
+    function openBook() {
+        if (!coverLanding) return;
+        exitCoverLanding();
+        currentSpread = lastRealSpreadIndex();
+        renderCurrentSpread();
+    }
+
     function goFirst() {
+        if (coverLanding) {
+            // The cover IS the "first" state — tapping first from here is a no-op
+            return;
+        }
         if (currentSpread > 0) {
             currentSpread = 0;
+            // Returning to cover means re-entering the landing feel
+            coverLanding = true;
+            document.body.classList.add('cover-landing-state');
+            if (stageEl) stageEl.classList.add('cover-landing');
             renderCurrentSpread();
         }
     }
     function goPrev() {
-        if (currentSpread > 0) {
+        if (coverLanding) return;
+        if (currentSpread > 1) {
             currentSpread--;
+            renderCurrentSpread();
+        } else if (currentSpread === 1) {
+            // Back past the first spread returns to the cover landing
+            currentSpread = 0;
+            coverLanding = true;
+            document.body.classList.add('cover-landing-state');
+            if (stageEl) stageEl.classList.add('cover-landing');
             renderCurrentSpread();
         }
     }
     function goNext() {
+        if (coverLanding) {
+            openBook();
+            return;
+        }
         if (currentSpread < spreadCount() - 1) {
             currentSpread++;
             renderCurrentSpread();
@@ -734,6 +740,7 @@
     }
     function goLast() {
         var last = spreadCount() - 1;
+        if (coverLanding) exitCoverLanding();
         if (currentSpread < last) {
             currentSpread = last;
             renderCurrentSpread();
@@ -747,16 +754,19 @@
 
     document.addEventListener('keydown', function (e) {
         if (window.JOTPAGE_VIEW_MODE !== 'book') return;
-        // Don't hijack arrows when the user is typing in an input
         var tag = (e.target && e.target.tagName) || '';
         if (tag === 'INPUT' || tag === 'TEXTAREA') return;
         if (e.key === 'Home') { goFirst(); e.preventDefault(); }
         else if (e.key === 'ArrowLeft') { goPrev(); e.preventDefault(); }
         else if (e.key === 'ArrowRight') { goNext(); e.preventDefault(); }
         else if (e.key === 'End') { goLast(); e.preventDefault(); }
+        else if ((e.key === ' ' || e.key === 'Enter') && coverLanding) {
+            openBook();
+            e.preventDefault();
+        }
     });
 
-    // Touch swipe
+    // Touch swipe — swiping left on the cover also opens the book
     (function () {
         if (!stageEl) return;
         var startX = 0, startY = 0, tracking = false;
@@ -780,7 +790,7 @@
     })();
 
     // ------------------------------------------------------------------
-    // Filter integration (called by the shared tag filter handler)
+    // Filter integration
     // ------------------------------------------------------------------
     function filterPages() {
         if (activeTagIds.length === 0) {
@@ -790,7 +800,6 @@
         filteredPages = allPages.filter(function (p) {
             if (!p.tagIds || !p.tagIds.length) return false;
             return activeTagIds.some(function (tid) {
-                // tagIds on server are numbers; chips emit strings. Coerce.
                 var n = parseInt(tid, 10);
                 return p.tagIds.indexOf(n) !== -1;
             });
@@ -800,9 +809,11 @@
     function setFilter(ids) {
         activeTagIds = Array.isArray(ids) ? ids.slice() : [];
         filterPages();
-        // After filtering, jump to the last spread so the user sees their
-        // newest matching pages first (same as initial load).
-        currentSpread = lastRealSpreadIndex();
+        // When filtering, leave cover landing and jump to most recent match.
+        if (coverLanding && activeTagIds.length > 0) exitCoverLanding();
+        if (!coverLanding) {
+            currentSpread = lastRealSpreadIndex();
+        }
         renderCurrentSpread();
         return { shown: filteredPages.length, total: allPages.length };
     }
@@ -811,8 +822,6 @@
     // Init + resize
     // ------------------------------------------------------------------
     function init() {
-        // Seed activeTagIds from ?tags= so the first render already reflects
-        // the filter when someone returns from the editor.
         try {
             var params = new URLSearchParams(window.location.search);
             var raw = params.get('tags');
@@ -822,7 +831,20 @@
             }
         } catch (err) { /* ignore */ }
         filterPages();
-        currentSpread = lastRealSpreadIndex();
+
+        // If the user arrived with a tag filter already applied, skip the
+        // cover landing and drop them on matching pages.
+        if (activeTagIds.length > 0 || allPages.length === 0) {
+            coverLanding = activeTagIds.length > 0 ? false : true;
+        }
+
+        if (coverLanding) {
+            document.body.classList.add('cover-landing-state');
+            if (stageEl) stageEl.classList.add('cover-landing');
+            currentSpread = 0;
+        } else {
+            currentSpread = lastRealSpreadIndex();
+        }
         renderCurrentSpread();
     }
 
@@ -830,7 +852,6 @@
     window.addEventListener('resize', function () {
         if (resizeTimer) clearTimeout(resizeTimer);
         resizeTimer = setTimeout(function () {
-            // Clamp & re-render (layout changes between mobile/desktop)
             currentSpread = Math.min(currentSpread, spreadCount() - 1);
             renderCurrentSpread();
         }, 120);
@@ -838,7 +859,8 @@
 
     window.bookView = {
         setFilter: setFilter,
-        refresh: function () { renderCurrentSpread(); }
+        refresh: function () { renderCurrentSpread(); },
+        openBook: openBook
     };
 
     init();

@@ -14,25 +14,53 @@
     <link href="${pageContext.request.contextPath}/css/theme.css" rel="stylesheet">
     <%@ include file="/WEB-INF/jspf/pwa-head.jspf" %>
     <style>
+        html, body { height: 100%; }
         body {
+            margin: 0;
             background:
                 radial-gradient(circle at 15% 10%, rgba(212,148,58,0.06), transparent 40%),
                 radial-gradient(circle at 90% 90%, rgba(160,82,45,0.04), transparent 45%),
                 var(--bg-cream);
         }
-        .notebook-header h1 {
+
+        /* -------------------------------------------------------------- */
+        /* List view top bar: Done button + optional tag filter          */
+        /* -------------------------------------------------------------- */
+        .list-top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 20px 24px 8px;
+            max-width: 960px;
+            margin: 0 auto;
+            flex-wrap: wrap;
+        }
+        .list-top-bar .list-heading {
             font-family: var(--font-serif);
-            font-weight: 700;
-            font-size: 2.2rem;
+            font-size: 1.5rem;
             color: var(--accent-brown);
+            letter-spacing: 0.01em;
             margin: 0;
         }
-        .notebook-header .subhead {
+        .list-top-bar .list-subhead {
             font-family: var(--font-serif);
             font-style: italic;
             color: var(--text-muted);
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             margin-top: 2px;
+        }
+        .list-top-bar .done-btn {
+            min-height: 44px;
+            padding: 0 18px;
+            font-family: var(--font-serif);
+            font-size: 1rem;
+        }
+
+        .list-container {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 0 24px 80px;
         }
 
         .tag-chip {
@@ -67,6 +95,18 @@
             border-color: var(--accent-brown);
             transform: translateY(-1px);
         }
+        .tag-filter-bar {
+            padding: 6px 0 14px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+        }
+        .tag-filter-bar .small {
+            font-family: var(--font-serif);
+            font-style: italic;
+            font-size: 0.9rem;
+        }
 
         /* Notebook entry layout */
         .notebook-list {
@@ -89,7 +129,6 @@
             position: relative;
         }
         .page-entry::before {
-            /* Left-edge "binding" stripe for a notebook feel */
             content: "";
             position: absolute;
             left: 0;
@@ -106,10 +145,7 @@
             color: var(--text-dark);
             border-color: var(--border-warm-strong);
         }
-        .page-entry .entry-main {
-            flex: 1 1 auto;
-            min-width: 0;
-        }
+        .page-entry .entry-main { flex: 1 1 auto; min-width: 0; }
         .page-entry .entry-date {
             font-family: var(--font-serif);
             font-size: 1.15rem;
@@ -138,8 +174,6 @@
             font-variant-numeric: tabular-nums;
             font-style: italic;
         }
-
-        /* Delete button — appears on hover */
         .page-entry .delete-page-btn {
             position: absolute;
             top: 6px;
@@ -166,7 +200,6 @@
             color: var(--accent-burgundy);
         }
 
-        /* Thumbnail — mini page with a "tape" corner for tactility */
         .page-thumb {
             flex: 0 0 auto;
             width: 58px;
@@ -182,7 +215,6 @@
             transform: rotate(-1.2deg);
         }
         .page-thumb::after {
-            /* Tape strip across the top */
             content: "";
             position: absolute;
             top: -4px;
@@ -208,23 +240,6 @@
                 linear-gradient(to bottom, #e8d9b8 1px, transparent 1px);
             background-size: 10px 10px;
         }
-        .page-thumb.bg-daily_calendar::before,
-        .page-thumb.bg-time_slot::before {
-            content: "";
-            position: absolute;
-            inset: 8px 6px 6px 6px;
-            background-image: repeating-linear-gradient(
-                to bottom, #fffdf7 0, #fffdf7 12px, #c4b088 12px, #c4b088 13px);
-        }
-        .page-thumb.bg-monthly_calendar::before {
-            content: "";
-            position: absolute;
-            inset: 8px 6px 6px 6px;
-            background-image:
-                linear-gradient(to right, #c4b088 1px, transparent 1px),
-                linear-gradient(to bottom, #c4b088 1px, transparent 1px);
-            background-size: 9px 14px;
-        }
         .page-thumb .closed-badge {
             position: absolute;
             bottom: 2px;
@@ -237,7 +252,6 @@
             letter-spacing: 0.04em;
         }
 
-        /* Reorder mode */
         body.reorder-mode .page-entry {
             cursor: grab;
             border-style: dashed;
@@ -253,19 +267,8 @@
         body.reorder-mode .page-entry.dragging {
             opacity: 0.45;
         }
-        .reorder-active .tag-filter-bar {
-            opacity: 0.45;
-            pointer-events: none;
-        }
 
-        /* Filter bar */
-        .tag-filter-bar .small {
-            font-family: var(--font-serif);
-            font-style: italic;
-            font-size: 0.9rem;
-        }
-
-        /* Template grid — 3 compact cards per row */
+        /* Template grid */
         .template-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -327,7 +330,6 @@
             color: var(--accent-burgundy);
             background: rgba(124, 50, 56, 0.08);
         }
-        /* Tag management rows */
         .tag-manage-row {
             display: flex;
             align-items: center;
@@ -384,7 +386,6 @@
             opacity: 1;
             color: var(--accent-burgundy);
         }
-
         .template-card-voice {
             border-style: dashed;
             gap: 6px;
@@ -398,7 +399,6 @@
             color: var(--accent-brown);
         }
 
-        /* Custom template creation form inside the modal */
         .custom-template-section {
             margin-top: 20px;
             padding-top: 18px;
@@ -484,7 +484,6 @@
             margin-top: 6px;
         }
         .custom-template-section .error-msg.visible { display: block; }
-
         .template-alert {
             display: none;
             padding: 10px 14px;
@@ -514,57 +513,24 @@
         .template-alert .alert-close:hover { opacity: 1; }
 
         /* -------------------------------------------------------------- */
-        /* View toggle */
-        /* -------------------------------------------------------------- */
-        .view-toggle {
-            display: inline-flex;
-            border: 1px solid var(--border-warm-strong);
-            border-radius: var(--radius-md);
-            overflow: hidden;
-            background: var(--bg-card);
-        }
-        .view-toggle .view-btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            min-width: 44px;
-            min-height: 40px;
-            padding: 0 12px;
-            color: var(--text-muted);
-            background: transparent;
-            text-decoration: none;
-            font-size: 1.1rem;
-            border: 0;
-            border-right: 1px solid var(--border-warm);
-            transition: background 0.15s ease, color 0.15s ease;
-        }
-        .view-toggle .view-btn:last-child { border-right: 0; }
-        .view-toggle .view-btn:hover {
-            background: var(--bg-cream-dark);
-            color: var(--accent-brown);
-        }
-        .view-toggle .view-btn.active {
-            background: var(--accent-brown);
-            color: #fff;
-        }
-
-        /* -------------------------------------------------------------- */
-        /* Book view */
+        /* Book view — leather desk fills the viewport                   */
         /* -------------------------------------------------------------- */
         .book-stage {
+            position: relative;
             background:
                 radial-gradient(circle at 50% 40%, #5a3d28 0%, #3e2a1a 60%, #281a0e 100%);
-            border-radius: var(--radius-lg);
-            padding: 40px 24px;
-            box-shadow:
-                inset 0 2px 12px rgba(0,0,0,0.4),
-                0 2px 8px rgba(74,55,40,0.15);
-            position: relative;
             overflow: hidden;
-            min-height: 560px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            min-height: 100vh;
+            min-height: 100dvh;
+            box-sizing: border-box;
+            padding: 40px 24px;
         }
         .book-stage::before {
-            /* Faint wood grain */
             content: "";
             position: absolute;
             inset: 0;
@@ -577,11 +543,14 @@
             pointer-events: none;
             opacity: 0.5;
         }
+        .book-stage.cover-landing {
+            padding: 0;
+        }
 
         .book-shell {
             position: relative;
+            width: 100%;
             max-width: 900px;
-            margin: 0 auto;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -596,13 +565,14 @@
             aspect-ratio: 296 / 210;
             background: transparent;
             filter: drop-shadow(0 18px 30px rgba(0,0,0,0.45));
-            transition: max-width 0.25s ease;
+            transition: max-width 0.25s ease, aspect-ratio 0.25s ease;
         }
-        /* Cover-only state: show just the cover, centered, single-page sized */
+        /* Cover-only / landing: single-page sized, centered, scaled up */
         .book.cover-only {
             aspect-ratio: 148 / 210;
-            max-width: 340px;
+            max-width: min(420px, 72vh);
             margin: 0 auto;
+            cursor: pointer;
         }
         .book.cover-only .left-page {
             display: none !important;
@@ -611,11 +581,12 @@
             display: none;
         }
         .book.cover-only .right-page.cover-page {
-            border-radius: 4px;
+            border-radius: 6px;
             box-shadow:
                 inset 0 0 40px rgba(0,0,0,0.35),
                 inset 0 0 0 1px rgba(0,0,0,0.2);
         }
+
         .book-page {
             flex: 1 1 50%;
             background: #fffdf7;
@@ -651,7 +622,7 @@
             border-radius: 2px;
         }
 
-        /* "Add Page" placeholder — faded cream page, centered + icon */
+        /* "Add Page" placeholder */
         .book-page.add-page {
             background:
                 repeating-linear-gradient(
@@ -663,7 +634,7 @@
             justify-content: center;
             align-items: center;
             color: var(--accent-brown);
-            transition: background 0.15s ease, transform 0.08s ease;
+            transition: background 0.15s ease;
         }
         .book-page.add-page:hover {
             background:
@@ -682,9 +653,7 @@
             pointer-events: none;
             transition: border-color 0.15s ease;
         }
-        .book-page.add-page:hover::before {
-            border-color: rgba(74,55,40,0.45);
-        }
+        .book-page.add-page:hover::before { border-color: rgba(74,55,40,0.45); }
         .book-page.add-page .add-page-inner {
             position: relative;
             text-align: center;
@@ -787,52 +756,111 @@
             pointer-events: none;
         }
 
-        /* Cover */
+        /* -------------------------------------------------------------- */
+        /* Cover — gold-stamped vinyl emblem on leather                  */
+        /* -------------------------------------------------------------- */
         .book-page.cover-page {
             background:
-                radial-gradient(circle at 30% 20%, #7a4e30 0%, #4a3728 60%, #332518 100%);
+                radial-gradient(circle at 30% 18%, #7a4e30 0%, #4a3728 58%, #2e2018 100%);
             color: #f0d8a8;
             justify-content: center;
             align-items: center;
-            padding: 40px 24px;
+            padding: 36px 28px 22px;
             border-radius: 0 4px 4px 0;
             box-shadow:
                 inset 10px 0 24px -10px rgba(0,0,0,0.6),
                 inset -4px 0 0 rgba(0,0,0,0.3),
-                inset 0 0 40px rgba(0,0,0,0.3);
+                inset 0 0 40px rgba(0,0,0,0.35);
         }
         .book-page.cover-page::before {
             content: "";
             position: absolute;
             inset: 22px;
-            border: 2px double rgba(212,148,58,0.7);
+            border: 1.5px double rgba(212,148,58,0.65);
+            border-radius: 3px;
+            pointer-events: none;
+        }
+        .book-page.cover-page::after {
+            /* Faint embossed inner frame — bottom pushed up so the footer
+               sits between the two border frames without overlapping */
+            content: "";
+            position: absolute;
+            top: 32px;
+            left: 32px;
+            right: 32px;
+            bottom: 56px;
+            border: 1px solid rgba(212,148,58,0.18);
             border-radius: 2px;
             pointer-events: none;
         }
-        .book-page.cover-page .cover-title {
-            font-family: var(--font-serif);
-            font-size: 2.4rem;
-            font-weight: 700;
-            text-align: center;
-            letter-spacing: 0.04em;
-            color: #f0d8a8;
-            text-shadow: 0 1px 0 rgba(0,0,0,0.4);
-            margin-bottom: 12px;
+        .cover-emblem {
+            flex: 0 1 auto;
+            max-width: min(70%, 280px);
+            margin: auto 0;
+            padding: 0;
         }
-        .book-page.cover-page .cover-flourish {
-            color: rgba(212,148,58,0.7);
-            font-size: 1.4rem;
-            letter-spacing: 0.4em;
+        .cover-emblem img {
+            width: 100%;
+            height: auto;
+            display: block;
+            border-radius: 6px;
+            /* Gold-foil stamp effect: sepia tint + screen blend mode makes
+               the dark SVG background vanish into the leather and renders
+               the light elements (wordmark, record grooves, needle) as
+               warm gold tones stamped onto the cover. */
+            mix-blend-mode: screen;
+            filter:
+                sepia(0.6)
+                saturate(2.2)
+                brightness(0.75)
+                contrast(1.1);
+            opacity: 0.85;
         }
-        .book-page.cover-page .cover-subtitle {
-            margin-top: 14px;
+        .cover-footer {
+            flex: 0 0 auto;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            /* Sit between the outer (22px) and inner (32px) border frames */
+            padding: 0 36px;
+            margin-top: auto;
+            margin-bottom: 2px;
+            color: rgba(240,216,168,0.78);
             font-family: var(--font-serif);
+            font-size: 0.82rem;
             font-style: italic;
-            font-size: 0.9rem;
-            color: rgba(240,216,168,0.75);
+            position: relative;
+            z-index: 1;
+        }
+        .cover-footer .cover-avatar {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 1px solid rgba(212,148,58,0.35);
+            background: rgba(0,0,0,0.3);
+            object-fit: cover;
+            flex: 0 0 auto;
+        }
+        .cover-footer .cover-name {
+            color: rgba(240,216,168,0.85);
+            font-style: normal;
+            font-weight: 500;
+            max-width: 180px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .cover-footer .cover-count {
+            color: rgba(240,216,168,0.5);
+            font-size: 0.75rem;
+        }
+        .book.cover-only .cover-emblem {
+            max-width: min(72%, 340px);
         }
 
-        /* Nav arrows */
+        /* Nav arrows inside book view (hidden until book is opened) */
         .book-nav-btn {
             flex: 0 0 auto;
             min-width: 52px;
@@ -847,16 +875,17 @@
             justify-content: center;
             cursor: pointer;
             box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-            transition: transform 0.1s ease, background 0.15s ease;
+            transition: transform 0.1s ease, background 0.15s ease, opacity 0.2s ease;
             user-select: none;
         }
-        .book-nav-btn:hover {
-            background: #fff;
-            transform: scale(1.05);
-        }
+        .book-nav-btn:hover { background: #fff; transform: scale(1.05); }
         .book-nav-btn:disabled,
         .book-nav-btn.disabled {
             opacity: 0.3;
+            pointer-events: none;
+        }
+        body.cover-landing-state .book-nav-btn {
+            opacity: 0;
             pointer-events: none;
         }
 
@@ -867,6 +896,11 @@
             font-style: italic;
             font-size: 0.9rem;
             color: rgba(255,253,247,0.65);
+            min-height: 1.4em;
+            transition: opacity 0.2s ease;
+        }
+        body.cover-landing-state .book-status {
+            opacity: 0;
         }
         .book-empty {
             text-align: center;
@@ -877,7 +911,28 @@
             font-size: 1.05rem;
         }
 
-        /* Mobile/narrow: single page at a time */
+        /* "Tap to open" hint on the cover landing */
+        .cover-tap-hint {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: calc(env(safe-area-inset-bottom, 0) + 20px);
+            text-align: center;
+            color: rgba(240, 216, 168, 0.75);
+            font-family: var(--font-serif);
+            font-style: italic;
+            font-size: 0.9rem;
+            letter-spacing: 0.03em;
+            pointer-events: none;
+            z-index: 3;
+            animation: cover-pulse 2.8s ease-in-out infinite;
+        }
+        body:not(.cover-landing-state) .cover-tap-hint { display: none; }
+        @keyframes cover-pulse {
+            0%, 100% { opacity: 0.45; transform: translateY(0); }
+            50%      { opacity: 1;    transform: translateY(-3px); }
+        }
+
         @media (max-width: 720px) {
             .book-stage { padding: 24px 8px; }
             .book-shell { gap: 6px; }
@@ -885,9 +940,7 @@
                 aspect-ratio: 148 / 210;
                 max-width: 320px;
             }
-            .book-page.left-page {
-                display: none !important;
-            }
+            .book-page.left-page { display: none !important; }
             .book-page.right-page {
                 border-radius: 4px;
                 box-shadow: inset 2px 2px 4px rgba(255,255,255,0.5);
@@ -898,71 +951,60 @@
                 min-height: 44px;
                 font-size: 1.2rem;
             }
-            .book-page.cover-page {
-                border-radius: 4px;
-            }
+            .book-page.cover-page { border-radius: 4px; }
         }
     </style>
 </head>
-<body class="${isPro ? 'tier-pro' : 'tier-free'}">
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
-        <div class="container">
-            <a class="navbar-brand" href="${pageContext.request.contextPath}/app/dashboard">Jyrnyl</a>
-            <div class="d-flex align-items-center ms-auto">
-                <img src="${sessionScope.user.avatarUrl}"
-                     alt="Avatar"
-                     class="rounded-circle me-2"
-                     width="36" height="36">
-                <span class="me-3">Welcome, ${sessionScope.user.displayName}</span>
-                <a class="btn btn-outline-secondary btn-sm"
-                   href="${pageContext.request.contextPath}/logout">Logout</a>
-            </div>
-        </div>
-    </nav>
+<body class="${isPro ? 'tier-pro' : 'tier-free'}"
+      data-page="dashboard"
+      data-view-mode="${viewMode}">
 
-    <main class="container py-5">
-        <div class="notebook-header d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
-            <div>
-                <h1 class="mb-0">My Jyrnyl</h1>
-                <div class="subhead">Drop the needle on a new thought</div>
-                <c:if test="${!isPro}">
-                    <c:choose>
-                        <c:when test="${monthlyPageLimit == -1}">
-                            <div class="text-muted small mt-1">Unlimited pages this month</div>
-                        </c:when>
-                        <c:otherwise>
-                            <div class="text-muted small mt-1">${pagesThisMonth} / ${monthlyPageLimit} pages this month</div>
-                        </c:otherwise>
-                    </c:choose>
-                </c:if>
+<c:if test="${viewMode == 'book'}">
+    <div class="book-stage" id="bookStage">
+        <div class="book-shell">
+            <button type="button" id="bookFirst" class="book-nav-btn" title="First page">
+                <i class="bi bi-chevron-double-left"></i>
+            </button>
+            <button type="button" id="bookPrev" class="book-nav-btn" title="Previous">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+            <div class="book" id="book">
+                <div class="book-page left-page" id="bookLeftPage"></div>
+                <div class="book-spine"></div>
+                <div class="book-page right-page" id="bookRightPage"></div>
             </div>
-            <div class="d-flex gap-2 align-items-center flex-wrap">
-                <div class="view-toggle" role="group" aria-label="View mode">
-                    <a href="${bookViewUrl}"
-                       class="view-btn ${viewMode == 'book' ? 'active' : ''}"
-                       title="Book view">
-                        <i class="bi bi-book"></i>
-                    </a>
-                    <a href="${listViewUrl}"
-                       class="view-btn ${viewMode == 'list' ? 'active' : ''}"
-                       title="List view">
-                        <i class="bi bi-list-ul"></i>
-                    </a>
-                </div>
-                <c:if test="${viewMode == 'list'}">
-                    <button type="button" id="reorderToggle" class="btn btn-outline-secondary">
-                        <i class="bi bi-arrows-move"></i> Reorder
-                    </button>
-                </c:if>
-                <button type="button" class="btn btn-primary"
-                        data-bs-toggle="modal" data-bs-target="#newPageModal">
-                    <i class="bi bi-plus-lg"></i> New Page
-                </button>
-            </div>
+            <button type="button" id="bookNext" class="book-nav-btn" title="Next">
+                <i class="bi bi-chevron-right"></i>
+            </button>
+            <button type="button" id="bookLast" class="book-nav-btn" title="Last page">
+                <i class="bi bi-chevron-double-right"></i>
+            </button>
         </div>
+        <div class="book-status" id="bookStatus">&nbsp;</div>
+        <div class="cover-tap-hint" id="coverTapHint">Tap the cover to open &middot; swipe to turn the page</div>
+    </div>
+</c:if>
 
+<c:if test="${viewMode == 'list'}">
+    <div class="list-top-bar">
+        <div>
+            <h1 class="list-heading">Sort your pages</h1>
+            <div class="list-subhead">Drag to reorder &middot; tap a page to open it</div>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+            <button type="button" id="reorderToggle" class="btn btn-outline-secondary">
+                <i class="bi bi-arrows-move"></i> Reorder
+            </button>
+            <a href="${pageContext.request.contextPath}/app/dashboard"
+               class="btn btn-primary done-btn">
+                <i class="bi bi-journal-bookmark-fill"></i> Done
+            </a>
+        </div>
+    </div>
+
+    <div class="list-container">
         <c:if test="${not empty allTags}">
-            <div class="tag-filter-bar mb-4 d-flex flex-wrap align-items-center gap-2">
+            <div class="tag-filter-bar">
                 <span class="text-muted small me-1">Filter:</span>
                 <c:forEach var="t" items="${allTags}">
                     <span class="tag-filter-chip" data-tag-id="${t.id}"
@@ -979,35 +1021,9 @@
             </div>
         </c:if>
 
-        <c:if test="${viewMode == 'book'}">
-            <div class="book-stage" id="bookStage">
-                <div class="book-shell">
-                    <button type="button" id="bookFirst" class="book-nav-btn" title="First page">
-                        <i class="bi bi-chevron-double-left"></i>
-                    </button>
-                    <button type="button" id="bookPrev" class="book-nav-btn" title="Previous">
-                        <i class="bi bi-chevron-left"></i>
-                    </button>
-                    <div class="book" id="book">
-                        <div class="book-page left-page" id="bookLeftPage"></div>
-                        <div class="book-spine"></div>
-                        <div class="book-page right-page" id="bookRightPage"></div>
-                    </div>
-                    <button type="button" id="bookNext" class="book-nav-btn" title="Next">
-                        <i class="bi bi-chevron-right"></i>
-                    </button>
-                    <button type="button" id="bookLast" class="book-nav-btn" title="Last page">
-                        <i class="bi bi-chevron-double-right"></i>
-                    </button>
-                </div>
-                <div class="book-status" id="bookStatus">&nbsp;</div>
-            </div>
-        </c:if>
-
-        <c:if test="${viewMode == 'list'}">
         <c:choose>
             <c:when test="${empty pages}">
-                <div class="text-muted">No pages yet. Drop your first track with the New Page button.</div>
+                <div class="text-muted">No pages yet. Drop your first track with the bubble menu.</div>
             </c:when>
             <c:otherwise>
                 <div id="pageList" class="notebook-list">
@@ -1049,549 +1065,668 @@
                 </div>
             </c:otherwise>
         </c:choose>
-        </c:if>
-    </main>
-
-    <div class="modal fade" id="newPageModal" tabindex="-1" aria-labelledby="newPageModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="newPageModalLabel">Choose a page template</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div id="templateAlert" class="template-alert" role="alert">
-                        <button type="button" class="alert-close" id="templateAlertClose" aria-label="Dismiss">&times;</button>
-                        <span id="templateAlertMsg"></span>
-                    </div>
-
-                    <div id="pageTypesList" class="template-grid">
-                        <div class="text-muted small">Loading templates...</div>
-                    </div>
-
-                    <div class="custom-template-section">
-                        <h6>Create a custom template
-                            <c:if test="${!isPro}">
-                                <span class="text-muted small" style="font-weight:400">(${customTemplateCount} / ${customTemplateLimit})</span>
-                            </c:if>
-                        </h6>
-                        <div class="hint">Upload a PNG to use as the page background.</div>
-
-                        <form id="customTemplateForm" novalidate>
-                            <div class="mb-2">
-                                <label for="ct-name">Template name</label>
-                                <input type="text"
-                                       id="ct-name"
-                                       class="form-control"
-                                       maxlength="100"
-                                       placeholder="e.g. My Bullet Journal">
-                            </div>
-
-                            <div class="mb-2">
-                                <label>Background image (PNG, max 5&nbsp;MB, 1480&times;2100&nbsp;px recommended)</label>
-                                <div class="drop-zone" id="ct-drop-zone">
-                                    <div class="drop-zone-label" id="ct-drop-label">
-                                        Click to choose a PNG file
-                                    </div>
-                                    <input type="file" id="ct-file" accept=".png,image/png">
-                                </div>
-                                <div class="preview-wrap" id="ct-preview-wrap">
-                                    <img id="ct-preview-img" alt="Preview">
-                                    <div class="preview-meta" id="ct-preview-meta"></div>
-                                </div>
-                            </div>
-
-                            <div class="form-check mb-3">
-                                <input type="checkbox" class="form-check-input" id="ct-immutable">
-                                <label class="form-check-label" for="ct-immutable">
-                                    Lock pages on close
-                                </label>
-                            </div>
-
-                            <div class="d-flex align-items-center gap-2">
-                                <button type="submit" id="ct-submit" class="btn btn-primary">
-                                    Create Template
-                                </button>
-                                <span class="error-msg" id="ct-error"></span>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
+</c:if>
 
-    <!-- Delete page confirmation modal -->
-    <div class="modal fade" id="deletePageModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-sm">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Delete page?</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p id="deletePageMsg">This page will be permanently deleted.</p>
-                    <div id="deleteLockedWrap" style="display:none">
-                        <p class="text-danger small mb-2">
-                            This page is locked. Type <strong>DELETE</strong> to confirm.
-                        </p>
-                        <input type="text" id="deleteConfirmInput" class="form-control form-control-sm"
-                               placeholder="Type DELETE" autocomplete="off">
-                    </div>
-                </div>
-                <div class="modal-footer justify-content-between">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" autofocus>No, keep it</button>
-                    <button type="button" class="btn btn-danger" id="deletePageConfirmBtn" disabled>Yes, delete</button>
-                </div>
+<%-- Floating bubble menu (Phase 5) --%>
+<%@ include file="/WEB-INF/jspf/bubble-menu.jspf" %>
+
+<%-- New page modal --%>
+<div class="modal fade" id="newPageModal" tabindex="-1" aria-labelledby="newPageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="newPageModalLabel">Choose a page template</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Tag management modal -->
-    <div class="modal fade" id="manageTagsModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Manage Tags</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-body">
+                <div id="templateAlert" class="template-alert" role="alert">
+                    <button type="button" class="alert-close" id="templateAlertClose" aria-label="Dismiss">&times;</button>
+                    <span id="templateAlertMsg"></span>
                 </div>
-                <div class="modal-body">
-                    <div id="tagManageList" class="d-flex flex-column gap-2">
-                        <div class="text-muted small">Loading...</div>
-                    </div>
-                    <!-- Delete in-use tag sub-dialog (hidden by default) -->
-                    <div id="tagDeleteInUse" class="mt-3 p-3 border rounded" style="display:none; background: var(--bg-cream-dark);">
-                        <p class="small mb-2">
-                            <strong id="tagDeleteName"></strong> is used on
-                            <strong id="tagDeleteCount"></strong> pages.
-                        </p>
-                        <div class="d-flex flex-column gap-2">
-                            <button type="button" id="tagDeleteStrip" class="btn btn-outline-secondary btn-sm">
-                                Remove from all pages &amp; delete
-                            </button>
-                            <div class="d-flex align-items-center gap-2">
-                                <span class="small text-muted">Replace with:</span>
-                                <select id="tagReplaceSelect" class="form-select form-select-sm" style="max-width:180px"></select>
-                                <button type="button" id="tagDeleteReplace" class="btn btn-primary btn-sm">Replace &amp; delete</button>
-                            </div>
-                            <button type="button" id="tagDeleteCancel" class="btn btn-link btn-sm text-muted p-0">Cancel</button>
+                <div id="pageTypesList" class="template-grid">
+                    <div class="text-muted small">Loading templates...</div>
+                </div>
+                <div class="custom-template-section">
+                    <h6>Create a custom template
+                        <c:if test="${!isPro}">
+                            <span class="text-muted small" style="font-weight:400">(${customTemplateCount} / ${customTemplateLimit})</span>
+                        </c:if>
+                    </h6>
+                    <div class="hint">Upload a PNG to use as the page background.</div>
+                    <form id="customTemplateForm" novalidate>
+                        <div class="mb-2">
+                            <label for="ct-name">Template name</label>
+                            <input type="text"
+                                   id="ct-name"
+                                   class="form-control"
+                                   maxlength="100"
+                                   placeholder="e.g. My Bullet Journal">
                         </div>
+                        <div class="mb-2">
+                            <label>Background image (PNG, max 5&nbsp;MB, 1480&times;2100&nbsp;px recommended)</label>
+                            <div class="drop-zone" id="ct-drop-zone">
+                                <div class="drop-zone-label" id="ct-drop-label">
+                                    Click to choose a PNG file
+                                </div>
+                                <input type="file" id="ct-file" accept=".png,image/png">
+                            </div>
+                            <div class="preview-wrap" id="ct-preview-wrap">
+                                <img id="ct-preview-img" alt="Preview">
+                                <div class="preview-meta" id="ct-preview-meta"></div>
+                            </div>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input type="checkbox" class="form-check-input" id="ct-immutable">
+                            <label class="form-check-label" for="ct-immutable">
+                                Lock pages on close
+                            </label>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <button type="submit" id="ct-submit" class="btn btn-primary">
+                                Create Template
+                            </button>
+                            <span class="error-msg" id="ct-error"></span>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%-- Delete page confirmation modal --%>
+<div class="modal fade" id="deletePageModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Delete page?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="deletePageMsg">This page will be permanently deleted.</p>
+                <div id="deleteLockedWrap" style="display:none">
+                    <p class="text-danger small mb-2">
+                        This page is locked. Type <strong>DELETE</strong> to confirm.
+                    </p>
+                    <input type="text" id="deleteConfirmInput" class="form-control form-control-sm"
+                           placeholder="Type DELETE" autocomplete="off">
+                </div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" autofocus>No, keep it</button>
+                <button type="button" class="btn btn-danger" id="deletePageConfirmBtn" disabled>Yes, delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<%-- Tag management modal --%>
+<div class="modal fade" id="manageTagsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Manage Tags</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="tagManageList" class="d-flex flex-column gap-2">
+                    <div class="text-muted small">Loading...</div>
+                </div>
+                <div id="tagDeleteInUse" class="mt-3 p-3 border rounded" style="display:none; background: var(--bg-cream-dark);">
+                    <p class="small mb-2">
+                        <strong id="tagDeleteName"></strong> is used on
+                        <strong id="tagDeleteCount"></strong> pages.
+                    </p>
+                    <div class="d-flex flex-column gap-2">
+                        <button type="button" id="tagDeleteStrip" class="btn btn-outline-secondary btn-sm">
+                            Remove from all pages &amp; delete
+                        </button>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="small text-muted">Replace with:</span>
+                            <select id="tagReplaceSelect" class="form-select form-select-sm" style="max-width:180px"></select>
+                            <button type="button" id="tagDeleteReplace" class="btn btn-primary btn-sm">Replace &amp; delete</button>
+                        </div>
+                        <button type="button" id="tagDeleteCancel" class="btn btn-link btn-sm text-muted p-0">Cancel</button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Upgrade modal -->
-    <div class="modal fade" id="upgradeModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-sm">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Jyrnyl Pro</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p id="upgradeMsg">Upgrade to Jyrnyl Pro to unlock this feature.</p>
-                    <ul class="small text-muted mb-0">
-                        <li>Unlimited pages</li>
-                        <li>Unlimited custom templates</li>
-                        <li>Unlimited AI voice processing</li>
-                        <li>Page deletion</li>
-                        <li>Export &amp; download</li>
-                    </ul>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Maybe later</button>
-                    <button type="button" class="btn btn-primary" disabled>Coming soon</button>
-                </div>
+<%-- Upgrade modal --%>
+<div class="modal fade" id="upgradeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Jyrnyl Pro</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="upgradeMsg">Upgrade to Jyrnyl Pro to unlock this feature.</p>
+                <ul class="small text-muted mb-0">
+                    <li>Unlimited pages</li>
+                    <li>Unlimited custom templates</li>
+                    <li>Unlimited AI voice processing</li>
+                    <li>Page deletion</li>
+                    <li>Export &amp; download</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Maybe later</button>
+                <button type="button" class="btn btn-primary" disabled>Coming soon</button>
             </div>
         </div>
     </div>
+</div>
 
-    <script>
-        window.CONTEXT_PATH = '${pageContext.request.contextPath}';
-        window.JOTPAGE_VIEW_MODE = '${viewMode}';
-        window.BOOK_PAGES = ${pagesJson};
-        window.IS_PRO = ${isPro};
-        window.IS_FIRST_MONTH = ${isFirstMonth};
-        window.PAGES_THIS_MONTH = ${pagesThisMonth};
-        window.MONTHLY_PAGE_LIMIT = ${monthlyPageLimit};
-        window.CUSTOM_TEMPLATE_COUNT = ${customTemplateCount};
-        window.CUSTOM_TEMPLATE_LIMIT = ${customTemplateLimit};
-    </script>
-    <c:if test="${viewMode == 'book'}">
-        <script src="${pageContext.request.contextPath}/js/book-view.js"></script>
-    </c:if>
-    <script>
-        (function () {
-            var ctx = '${pageContext.request.contextPath}';
-            var isPro = window.IS_PRO;
+<script>
+    window.CONTEXT_PATH = '${pageContext.request.contextPath}';
+    window.JOTPAGE_VIEW_MODE = '${viewMode}';
+    window.BOOK_PAGES = ${pagesJson};
+    window.BOOK_USER = {
+        displayName: '<c:out value="${sessionScope.user.displayName}"/>',
+        avatarUrl: '<c:out value="${sessionScope.user.avatarUrl}"/>',
+        pageCount: ${empty pages ? 0 : pages.size()}
+    };
+    window.IS_PRO = ${isPro};
+    window.IS_FIRST_MONTH = ${isFirstMonth};
+    window.PAGES_THIS_MONTH = ${pagesThisMonth};
+    window.MONTHLY_PAGE_LIMIT = ${monthlyPageLimit};
+    window.CUSTOM_TEMPLATE_COUNT = ${customTemplateCount};
+    window.CUSTOM_TEMPLATE_LIMIT = ${customTemplateLimit};
+    window.LOGO_URL = '${pageContext.request.contextPath}/images/jyrnyl-logo-square.svg';
+</script>
+<c:if test="${viewMode == 'book'}">
+    <script src="${pageContext.request.contextPath}/js/book-view.js?v=4"></script>
+</c:if>
+<script src="${pageContext.request.contextPath}/js/bubble-menu.js?v=4"></script>
+<script>
+    (function () {
+        var ctx = '${pageContext.request.contextPath}';
+        var isPro = window.IS_PRO;
 
-            // Show upgrade modal with a message
-            function showUpgrade(msg) {
-                var el = document.getElementById('upgradeModal');
-                if (!el) return;
-                document.getElementById('upgradeMsg').textContent = msg || 'Upgrade to Jyrnyl Pro to unlock this feature.';
-                new bootstrap.Modal(el).show();
-            }
+        function showUpgrade(msg) {
+            var el = document.getElementById('upgradeModal');
+            if (!el) return;
+            document.getElementById('upgradeMsg').textContent = msg || 'Upgrade to Jyrnyl Pro to unlock this feature.';
+            new bootstrap.Modal(el).show();
+        }
 
-            // Handle ?error=page_limit redirect
-            var errorParam = '${errorParam}';
-            if (errorParam === 'page_limit') {
-                showUpgrade('You\u2019ve reached the ' + window.MONTHLY_PAGE_LIMIT + '-page monthly limit. Upgrade to Jyrnyl Pro for unlimited pages.');
-                // Clean URL
-                history.replaceState(null, '', location.pathname + location.search.replace(/[?&]error=page_limit/, ''));
-            }
+        var errorParam = '${errorParam}';
+        if (errorParam === 'page_limit') {
+            showUpgrade('You\u2019ve reached the ' + window.MONTHLY_PAGE_LIMIT + '-page monthly limit. Upgrade to Jyrnyl Pro for unlimited pages.');
+            history.replaceState(null, '', location.pathname + location.search.replace(/[?&]error=page_limit/, ''));
+        }
 
-            var modal = document.getElementById('newPageModal');
-            var listEl = document.getElementById('pageTypesList');
-            var templatesLoaded = false;
-
-            var alertEl = document.getElementById('templateAlert');
-            var alertMsg = document.getElementById('templateAlertMsg');
-            var alertClose = document.getElementById('templateAlertClose');
-
-            function showTemplateAlert(msg) {
-                alertMsg.textContent = msg;
-                alertEl.classList.add('visible');
-            }
-            function hideTemplateAlert() {
-                alertEl.classList.remove('visible');
-                alertMsg.textContent = '';
-            }
-            if (alertClose) alertClose.addEventListener('click', hideTemplateAlert);
-            modal.addEventListener('hidden.bs.modal', hideTemplateAlert);
-
-            // ----- Template grid rendering -----
-            var draggingCard = null;
-
-            function renderTemplates(types) {
-                listEl.innerHTML = '';
-                if (!types || types.length === 0) {
-                    listEl.innerHTML = '<div class="text-muted small">No templates available.</div>';
-                    return;
+        // Auto-open the new-page modal / tag-filter popover when routed from
+        // the editor bubble menu (?new=1 / ?filter=1). Strip the param from
+        // the URL so refreshing doesn't re-trigger it.
+        (function handleBubbleRoutingParams() {
+            var params = new URLSearchParams(location.search);
+            var autoNew = params.get('new') === '1';
+            var autoFilter = params.get('filter') === '1';
+            if (!autoNew && !autoFilter) return;
+            params.delete('new');
+            params.delete('filter');
+            var qs = params.toString();
+            history.replaceState(null, '',
+                location.pathname + (qs ? '?' + qs : ''));
+            // Defer to next tick so all the JS below has wired its listeners.
+            setTimeout(function () {
+                if (autoNew) {
+                    document.dispatchEvent(new CustomEvent('jyrnyl:open-new-page-modal'));
+                } else if (autoFilter) {
+                    document.dispatchEvent(new CustomEvent('jyrnyl:open-tag-filter'));
                 }
-                types.forEach(function (t) {
-                    var card = document.createElement('a');
-                    card.className = 'template-card';
-                    card.href = ctx + '/app/page/new?typeId=' + t.id;
-                    card.setAttribute('data-type-id', t.id);
-                    card.draggable = true;
+            }, 0);
+        })();
 
-                    // Name label
-                    var label = document.createElement('span');
-                    label.textContent = t.name;
-                    card.appendChild(label);
+        var modal = document.getElementById('newPageModal');
+        var listEl = document.getElementById('pageTypesList');
+        var templatesLoaded = false;
 
-                    // Lock icon for immutable templates
-                    if (t.immutableOnClose) {
-                        var lock = document.createElement('i');
-                        lock.className = 'bi bi-lock-fill lock-icon';
-                        lock.title = 'Locks on close';
-                        card.appendChild(lock);
-                    }
+        var alertEl = document.getElementById('templateAlert');
+        var alertMsg = document.getElementById('templateAlertMsg');
+        var alertClose = document.getElementById('templateAlertClose');
 
-                    // Delete button for user-owned templates only
-                    if (t.system === false && t.userId != null) {
-                        var del = document.createElement('button');
-                        del.type = 'button';
-                        del.className = 'delete-template-btn';
-                        del.title = 'Delete template';
-                        del.innerHTML = '<i class="bi bi-x-lg"></i>';
-                        del.addEventListener('click', function (e) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            hideTemplateAlert();
-                            if (!confirm('Delete this template? Pages that already use it will remain but you can no longer create new ones with it.')) return;
-                            fetch(ctx + '/app/api/pagetypes/' + t.id, {
-                                method: 'DELETE',
-                                credentials: 'same-origin'
-                            }).then(function (r) {
-                                if (r.ok || r.status === 204) {
-                                    refreshTemplates();
-                                    return;
-                                }
-                                if (r.status === 409) {
-                                    return r.json().then(function (body) {
-                                        showTemplateAlert(body && body.error
-                                            ? body.error
-                                            : 'This template is still in use.');
-                                    }).catch(function () {
-                                        showTemplateAlert('This template is still in use.');
-                                    });
-                                }
-                                showTemplateAlert('Failed to delete template (' + r.status + ').');
-                            }).catch(function (err) {
-                                showTemplateAlert('Network error: ' + err.message);
-                            });
-                        });
-                        card.appendChild(del);
-                    }
+        function showTemplateAlert(msg) {
+            alertMsg.textContent = msg;
+            alertEl.classList.add('visible');
+        }
+        function hideTemplateAlert() {
+            alertEl.classList.remove('visible');
+            alertMsg.textContent = '';
+        }
+        if (alertClose) alertClose.addEventListener('click', hideTemplateAlert);
+        modal.addEventListener('hidden.bs.modal', hideTemplateAlert);
 
-                    // Drag-and-drop handlers
-                    card.addEventListener('dragstart', function (e) {
-                        draggingCard = card;
-                        card.classList.add('dragging');
-                        if (e.dataTransfer) {
-                            e.dataTransfer.effectAllowed = 'move';
-                            e.dataTransfer.setData('text/plain', t.id);
-                        }
-                    });
-                    card.addEventListener('dragend', function () {
-                        if (draggingCard) draggingCard.classList.remove('dragging');
-                        draggingCard = null;
-                        listEl.querySelectorAll('.template-card').forEach(function (c) {
-                            c.classList.remove('drag-over');
-                        });
-                    });
-                    card.addEventListener('dragover', function (e) {
-                        if (!draggingCard || card === draggingCard) return;
+        // ----- Template grid rendering -----
+        var draggingCard = null;
+
+        function renderTemplates(types) {
+            listEl.innerHTML = '';
+            if (!types || types.length === 0) {
+                listEl.innerHTML = '<div class="text-muted small">No templates available.</div>';
+                return;
+            }
+            types.forEach(function (t) {
+                var card = document.createElement('a');
+                card.className = 'template-card';
+                card.href = ctx + '/app/page/new?typeId=' + t.id;
+                card.setAttribute('data-type-id', t.id);
+                card.draggable = true;
+
+                var label = document.createElement('span');
+                label.textContent = t.name;
+                card.appendChild(label);
+
+                if (t.immutableOnClose) {
+                    var lock = document.createElement('i');
+                    lock.className = 'bi bi-lock-fill lock-icon';
+                    lock.title = 'Locks on close';
+                    card.appendChild(lock);
+                }
+
+                if (t.system === false && t.userId != null) {
+                    var del = document.createElement('button');
+                    del.type = 'button';
+                    del.className = 'delete-template-btn';
+                    del.title = 'Delete template';
+                    del.innerHTML = '<i class="bi bi-x-lg"></i>';
+                    del.addEventListener('click', function (e) {
                         e.preventDefault();
-                        if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
-                        card.classList.add('drag-over');
+                        e.stopPropagation();
+                        hideTemplateAlert();
+                        if (!confirm('Delete this template? Pages that already use it will remain but you can no longer create new ones with it.')) return;
+                        fetch(ctx + '/app/api/pagetypes/' + t.id, {
+                            method: 'DELETE',
+                            credentials: 'same-origin'
+                        }).then(function (r) {
+                            if (r.ok || r.status === 204) {
+                                refreshTemplates();
+                                return;
+                            }
+                            if (r.status === 409) {
+                                return r.json().then(function (body) {
+                                    showTemplateAlert(body && body.error
+                                        ? body.error
+                                        : 'This template is still in use.');
+                                }).catch(function () {
+                                    showTemplateAlert('This template is still in use.');
+                                });
+                            }
+                            showTemplateAlert('Failed to delete template (' + r.status + ').');
+                        }).catch(function (err) {
+                            showTemplateAlert('Network error: ' + err.message);
+                        });
                     });
-                    card.addEventListener('dragleave', function () {
-                        card.classList.remove('drag-over');
-                    });
-                    card.addEventListener('drop', function (e) {
-                        if (!draggingCard || card === draggingCard) return;
-                        e.preventDefault();
-                        card.classList.remove('drag-over');
-                        // Determine if we should insert before or after
-                        var rect = card.getBoundingClientRect();
-                        var midX = rect.left + rect.width / 2;
-                        if (e.clientX > midX) {
-                            listEl.insertBefore(draggingCard, card.nextSibling);
-                        } else {
-                            listEl.insertBefore(draggingCard, card);
-                        }
-                        persistTemplateOrder();
-                    });
+                    card.appendChild(del);
+                }
 
-                    listEl.appendChild(card);
+                card.addEventListener('dragstart', function (e) {
+                    draggingCard = card;
+                    card.classList.add('dragging');
+                    if (e.dataTransfer) {
+                        e.dataTransfer.effectAllowed = 'move';
+                        e.dataTransfer.setData('text/plain', t.id);
+                    }
+                });
+                card.addEventListener('dragend', function () {
+                    if (draggingCard) draggingCard.classList.remove('dragging');
+                    draggingCard = null;
+                    listEl.querySelectorAll('.template-card').forEach(function (c) {
+                        c.classList.remove('drag-over');
+                    });
+                });
+                card.addEventListener('dragover', function (e) {
+                    if (!draggingCard || card === draggingCard) return;
+                    e.preventDefault();
+                    if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+                    card.classList.add('drag-over');
+                });
+                card.addEventListener('dragleave', function () {
+                    card.classList.remove('drag-over');
+                });
+                card.addEventListener('drop', function (e) {
+                    if (!draggingCard || card === draggingCard) return;
+                    e.preventDefault();
+                    card.classList.remove('drag-over');
+                    var rect = card.getBoundingClientRect();
+                    var midX = rect.left + rect.width / 2;
+                    if (e.clientX > midX) {
+                        listEl.insertBefore(draggingCard, card.nextSibling);
+                    } else {
+                        listEl.insertBefore(draggingCard, card);
+                    }
+                    persistTemplateOrder();
                 });
 
-                // Fixed "Voice" utility card — always last, not draggable
-                var voice = document.createElement('a');
-                voice.className = 'template-card template-card-voice';
-                voice.href = ctx + '/app/voice-record';
-                voice.draggable = false;
-                voice.innerHTML = '<i class="bi bi-mic-fill"></i> Voice';
-                listEl.appendChild(voice);
-            }
-
-            function persistTemplateOrder() {
-                var ids = Array.prototype.map.call(
-                    listEl.querySelectorAll('.template-card'),
-                    function (el) { return parseInt(el.getAttribute('data-type-id'), 10); }
-                );
-                fetch(ctx + '/app/api/pagetypes/reorder', {
-                    method: 'PUT',
-                    credentials: 'same-origin',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ typeIds: ids })
-                }).catch(function (err) {
-                    console.error('[dashboard] template reorder failed', err);
-                });
-            }
-
-            function refreshTemplates() {
-                return fetch(ctx + '/app/api/pagetypes', { credentials: 'same-origin' })
-                    .then(function (r) { return r.json(); })
-                    .then(function (types) {
-                        templatesLoaded = true;
-                        renderTemplates(types);
-                    })
-                    .catch(function () {
-                        listEl.innerHTML = '<div class="text-danger small">Failed to load templates.</div>';
-                    });
-            }
-
-            modal.addEventListener('show.bs.modal', function () {
-                if (!templatesLoaded) refreshTemplates();
+                listEl.appendChild(card);
             });
 
-            // -------- Custom template creation --------
-            var ctForm = document.getElementById('customTemplateForm');
-            var ctName = document.getElementById('ct-name');
-            var ctFile = document.getElementById('ct-file');
-            var ctDropLabel = document.getElementById('ct-drop-label');
-            var ctPreviewWrap = document.getElementById('ct-preview-wrap');
-            var ctPreviewImg = document.getElementById('ct-preview-img');
-            var ctPreviewMeta = document.getElementById('ct-preview-meta');
-            var ctImmutable = document.getElementById('ct-immutable');
-            var ctSubmit = document.getElementById('ct-submit');
-            var ctError = document.getElementById('ct-error');
+            var voice = document.createElement('a');
+            voice.className = 'template-card template-card-voice';
+            voice.href = ctx + '/app/voice-record';
+            voice.draggable = false;
+            voice.innerHTML = '<i class="bi bi-mic-fill"></i> Voice';
+            listEl.appendChild(voice);
+        }
 
-            var MAX_BYTES = 5 * 1024 * 1024;
+        function persistTemplateOrder() {
+            var ids = Array.prototype.map.call(
+                listEl.querySelectorAll('.template-card'),
+                function (el) { return parseInt(el.getAttribute('data-type-id'), 10); }
+            );
+            fetch(ctx + '/app/api/pagetypes/reorder', {
+                method: 'PUT',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ typeIds: ids })
+            }).catch(function (err) {
+                console.error('[dashboard] template reorder failed', err);
+            });
+        }
 
-            function showError(msg) {
-                ctError.textContent = msg;
-                ctError.classList.add('visible');
+        function refreshTemplates() {
+            return fetch(ctx + '/app/api/pagetypes', { credentials: 'same-origin' })
+                .then(function (r) { return r.json(); })
+                .then(function (types) {
+                    templatesLoaded = true;
+                    renderTemplates(types);
+                })
+                .catch(function () {
+                    listEl.innerHTML = '<div class="text-danger small">Failed to load templates.</div>';
+                });
+        }
+
+        modal.addEventListener('show.bs.modal', function () {
+            if (!templatesLoaded) refreshTemplates();
+        });
+
+        // The bubble menu dispatches this when "New track" is chosen.
+        document.addEventListener('jyrnyl:open-new-page-modal', function () {
+            try {
+                bootstrap.Modal.getOrCreateInstance(modal).show();
+            } catch (err) {
+                console.error('[dashboard] failed to open new page modal', err);
             }
-            function clearError() {
-                ctError.textContent = '';
-                ctError.classList.remove('visible');
+        });
+
+        // -------- Custom template creation --------
+        var ctForm = document.getElementById('customTemplateForm');
+        var ctName = document.getElementById('ct-name');
+        var ctFile = document.getElementById('ct-file');
+        var ctDropLabel = document.getElementById('ct-drop-label');
+        var ctPreviewWrap = document.getElementById('ct-preview-wrap');
+        var ctPreviewImg = document.getElementById('ct-preview-img');
+        var ctPreviewMeta = document.getElementById('ct-preview-meta');
+        var ctImmutable = document.getElementById('ct-immutable');
+        var ctSubmit = document.getElementById('ct-submit');
+        var ctError = document.getElementById('ct-error');
+
+        var MAX_BYTES = 5 * 1024 * 1024;
+
+        function showError(msg) {
+            ctError.textContent = msg;
+            ctError.classList.add('visible');
+        }
+        function clearError() {
+            ctError.textContent = '';
+            ctError.classList.remove('visible');
+        }
+
+        ctFile.addEventListener('change', function () {
+            clearError();
+            var file = ctFile.files && ctFile.files[0];
+            if (!file) {
+                ctPreviewWrap.classList.remove('visible');
+                ctDropLabel.textContent = 'Click to choose a PNG file';
+                return;
+            }
+            if (!/\.png$/i.test(file.name) && file.type !== 'image/png') {
+                showError('File must be a PNG.');
+                ctFile.value = '';
+                ctPreviewWrap.classList.remove('visible');
+                return;
+            }
+            if (file.size > MAX_BYTES) {
+                showError('File is ' + (file.size / 1024 / 1024).toFixed(1)
+                    + ' MB. Max is 5 MB.');
+                ctFile.value = '';
+                ctPreviewWrap.classList.remove('visible');
+                return;
+            }
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                ctPreviewImg.src = e.target.result;
+                ctPreviewMeta.textContent = file.name + ' (' + (file.size / 1024).toFixed(0) + ' KB)';
+                ctPreviewWrap.classList.add('visible');
+                ctDropLabel.textContent = 'Click to choose a different file';
+            };
+            reader.readAsDataURL(file);
+        });
+
+        ctForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            clearError();
+
+            var name = (ctName.value || '').trim();
+            if (!name) {
+                showError('Please enter a template name.');
+                ctName.focus();
+                return;
+            }
+            var file = ctFile.files && ctFile.files[0];
+            if (!file) {
+                showError('Please choose a PNG file.');
+                return;
+            }
+            if (!/\.png$/i.test(file.name) && file.type !== 'image/png') {
+                showError('File must be a PNG.');
+                return;
+            }
+            if (file.size > MAX_BYTES) {
+                showError('File too large (max 5 MB).');
+                return;
             }
 
-            ctFile.addEventListener('change', function () {
-                clearError();
-                var file = ctFile.files && ctFile.files[0];
-                if (!file) {
+            var fd = new FormData();
+            fd.append('name', name);
+            fd.append('immutableOnClose', ctImmutable.checked ? 'true' : 'false');
+            fd.append('backgroundImage', file);
+
+            ctSubmit.disabled = true;
+            ctSubmit.textContent = 'Uploading…';
+            fetch(ctx + '/app/api/pagetypes', {
+                method: 'POST',
+                credentials: 'same-origin',
+                body: fd
+            }).then(function (r) {
+                ctSubmit.disabled = false;
+                ctSubmit.textContent = 'Create Template';
+                if (r.ok || r.status === 201) {
+                    ctForm.reset();
                     ctPreviewWrap.classList.remove('visible');
                     ctDropLabel.textContent = 'Click to choose a PNG file';
-                    return;
-                }
-                if (!/\.png$/i.test(file.name) && file.type !== 'image/png') {
-                    showError('File must be a PNG.');
-                    ctFile.value = '';
-                    ctPreviewWrap.classList.remove('visible');
-                    return;
-                }
-                if (file.size > MAX_BYTES) {
-                    showError('File is ' + (file.size / 1024 / 1024).toFixed(1)
-                        + ' MB. Max is 5 MB.');
-                    ctFile.value = '';
-                    ctPreviewWrap.classList.remove('visible');
-                    return;
-                }
-                var reader = new FileReader();
-                reader.onload = function (e) {
-                    ctPreviewImg.src = e.target.result;
-                    ctPreviewMeta.textContent = file.name + ' (' + (file.size / 1024).toFixed(0) + ' KB)';
-                    ctPreviewWrap.classList.add('visible');
-                    ctDropLabel.textContent = 'Click to choose a different file';
-                };
-                reader.readAsDataURL(file);
-            });
-
-            ctForm.addEventListener('submit', function (e) {
-                e.preventDefault();
-                clearError();
-
-                var name = (ctName.value || '').trim();
-                if (!name) {
-                    showError('Please enter a template name.');
-                    ctName.focus();
-                    return;
-                }
-                var file = ctFile.files && ctFile.files[0];
-                if (!file) {
-                    showError('Please choose a PNG file.');
-                    return;
-                }
-                if (!/\.png$/i.test(file.name) && file.type !== 'image/png') {
-                    showError('File must be a PNG.');
-                    return;
-                }
-                if (file.size > MAX_BYTES) {
-                    showError('File too large (max 5 MB).');
-                    return;
-                }
-
-                var fd = new FormData();
-                fd.append('name', name);
-                fd.append('immutableOnClose', ctImmutable.checked ? 'true' : 'false');
-                fd.append('backgroundImage', file);
-
-                ctSubmit.disabled = true;
-                ctSubmit.textContent = 'Uploading…';
-                fetch(ctx + '/app/api/pagetypes', {
-                    method: 'POST',
-                    credentials: 'same-origin',
-                    body: fd
-                }).then(function (r) {
-                    ctSubmit.disabled = false;
-                    ctSubmit.textContent = 'Create Template';
-                    if (r.ok || r.status === 201) {
-                        ctForm.reset();
-                        ctPreviewWrap.classList.remove('visible');
-                        ctDropLabel.textContent = 'Click to choose a PNG file';
-                        refreshTemplates();
-                    } else {
-                        return r.text().then(function (t) {
-                            showError('Upload failed: ' + (t || r.statusText));
-                        });
-                    }
-                }).catch(function (err) {
-                    ctSubmit.disabled = false;
-                    ctSubmit.textContent = 'Create Template';
-                    showError('Upload failed: ' + err.message);
-                });
-            });
-
-            function escapeHtml(s) {
-                return (s == null ? '' : String(s))
-                    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-                    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-            }
-
-            // ------------------------------------------------------------------
-            // Tag filter (UNION / OR)
-            // ------------------------------------------------------------------
-            var activeTagIds = [];
-            var filterChips = document.querySelectorAll('.tag-filter-chip');
-            var entries = document.querySelectorAll('.page-entry');
-            var clearBtn = document.getElementById('clearTagFilter');
-            var filterStatus = document.getElementById('filterStatus');
-
-            function currentTagSuffix() {
-                return activeTagIds.length ? '?tags=' + activeTagIds.join(',') : '';
-            }
-
-            function updateEntryHrefs() {
-                var suffix = currentTagSuffix();
-                entries.forEach(function (card) {
-                    var base = card.getAttribute('data-base-href');
-                    if (base) card.setAttribute('href', base + suffix);
-                });
-            }
-
-            function applyFilter() {
-                if (entries.length > 0) {
-                    var shown = 0;
-                    var total = entries.length;
-                    entries.forEach(function (card) {
-                        if (activeTagIds.length === 0) {
-                            card.style.display = '';
-                            shown++;
-                            return;
-                        }
-                        var raw = card.getAttribute('data-tag-ids') || '';
-                        var ids = raw ? raw.split(',').filter(Boolean) : [];
-                        var hasAny = activeTagIds.some(function (tid) {
-                            return ids.indexOf(String(tid)) !== -1;
-                        });
-                        if (hasAny) {
-                            card.style.display = '';
-                            shown++;
-                        } else {
-                            card.style.display = 'none';
-                        }
+                    refreshTemplates();
+                } else {
+                    return r.text().then(function (t) {
+                        showError('Upload failed: ' + (t || r.statusText));
                     });
-                    updateEntryHrefs();
-                    if (filterStatus) {
-                        filterStatus.textContent = activeTagIds.length
-                            ? 'Showing ' + shown + ' of ' + total + ' pages'
-                            : '';
-                    }
                 }
+            }).catch(function (err) {
+                ctSubmit.disabled = false;
+                ctSubmit.textContent = 'Create Template';
+                showError('Upload failed: ' + err.message);
+            });
+        });
 
-                // Book view responds to the same filter state
-                if (window.bookView && typeof window.bookView.setFilter === 'function') {
-                    var count = window.bookView.setFilter(activeTagIds.slice());
-                    if (filterStatus && entries.length === 0) {
-                        filterStatus.textContent = activeTagIds.length
-                            ? 'Showing ' + count.shown + ' of ' + count.total + ' pages'
-                            : '';
+        // ------------------------------------------------------------------
+        // Tag filter (list view chips + bubble-menu tag popover)
+        // ------------------------------------------------------------------
+        var activeTagIds = [];
+        var filterChips = document.querySelectorAll('.tag-filter-chip');
+        var entries = document.querySelectorAll('.page-entry');
+        var clearBtn = document.getElementById('clearTagFilter');
+        var filterStatus = document.getElementById('filterStatus');
+
+        function currentTagSuffix() {
+            return activeTagIds.length ? '?tags=' + activeTagIds.join(',') : '';
+        }
+
+        function updateEntryHrefs() {
+            var suffix = currentTagSuffix();
+            entries.forEach(function (card) {
+                var base = card.getAttribute('data-base-href');
+                if (base) card.setAttribute('href', base + suffix);
+            });
+        }
+
+        function applyFilter() {
+            if (entries.length > 0) {
+                var shown = 0;
+                var total = entries.length;
+                entries.forEach(function (card) {
+                    if (activeTagIds.length === 0) {
+                        card.style.display = '';
+                        shown++;
+                        return;
                     }
+                    var raw = card.getAttribute('data-tag-ids') || '';
+                    var ids = raw ? raw.split(',').filter(Boolean) : [];
+                    var hasAny = activeTagIds.some(function (tid) {
+                        return ids.indexOf(String(tid)) !== -1;
+                    });
+                    if (hasAny) {
+                        card.style.display = '';
+                        shown++;
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+                updateEntryHrefs();
+                if (filterStatus) {
+                    filterStatus.textContent = activeTagIds.length
+                        ? 'Showing ' + shown + ' of ' + total + ' pages'
+                        : '';
                 }
             }
+            if (window.bookView && typeof window.bookView.setFilter === 'function') {
+                var count = window.bookView.setFilter(activeTagIds.slice());
+                updateBubbleTagStatus(count.shown, count.total);
+            }
+        }
 
-            filterChips.forEach(function (chip) {
+        filterChips.forEach(function (chip) {
+            chip.addEventListener('click', function () {
+                var tid = chip.getAttribute('data-tag-id');
+                var idx = activeTagIds.indexOf(tid);
+                if (idx >= 0) {
+                    activeTagIds.splice(idx, 1);
+                    chip.classList.remove('active');
+                } else {
+                    activeTagIds.push(tid);
+                    chip.classList.add('active');
+                }
+                syncBubbleFilterChips();
+                applyFilter();
+            });
+        });
+
+        if (clearBtn) {
+            clearBtn.addEventListener('click', function () {
+                activeTagIds = [];
+                filterChips.forEach(function (c) { c.classList.remove('active'); });
+                syncBubbleFilterChips();
+                applyFilter();
+            });
+        }
+
+        // Restore filter state from ?tags=... in the URL
+        (function initFilterFromUrl() {
+            var params = new URLSearchParams(window.location.search);
+            var raw = params.get('tags');
+            // Phase 4: when entering list view via bubble menu (?sort=1),
+            // force-clear the filter so sort order is predictable.
+            var sortMode = params.get('sort') === '1';
+            if (sortMode) {
+                activeTagIds = [];
+                filterChips.forEach(function (c) { c.classList.remove('active'); });
+                updateEntryHrefs();
+                history.replaceState(null, '',
+                    location.pathname + '?view=list');
+                return;
+            }
+            if (!raw) {
+                updateEntryHrefs();
+                return;
+            }
+            var wanted = raw.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+            var valid = {};
+            filterChips.forEach(function (c) { valid[c.getAttribute('data-tag-id')] = c; });
+            wanted.forEach(function (tid) {
+                if (valid[tid] && activeTagIds.indexOf(tid) === -1) {
+                    activeTagIds.push(tid);
+                    valid[tid].classList.add('active');
+                }
+            });
+            applyFilter();
+        })();
+
+        // ------------------------------------------------------------------
+        // Bubble-menu tag filter popover integration
+        // ------------------------------------------------------------------
+        var btf = document.getElementById('bubbleTagFilter');
+        var btfList = document.getElementById('bubbleTagFilterList');
+        var btfClose = btf ? btf.querySelector('.btf-close') : null;
+        var btfClear = document.getElementById('bubbleTagFilterClear');
+        var btfStatus = document.getElementById('bubbleTagFilterStatus');
+
+        // All tags are already on the page as filter chips. Use those as the
+        // source of truth for color + name so we don't need a separate fetch.
+        var allTagsData = Array.prototype.map.call(
+            document.querySelectorAll('.tag-filter-chip'),
+            function (chip) {
+                return {
+                    id: chip.getAttribute('data-tag-id'),
+                    name: chip.textContent.trim(),
+                    color: chip.style.backgroundColor
+                };
+            }
+        );
+        // Fallback: if we're in book view (no chips rendered), fetch them.
+        function ensureAllTagsData() {
+            if (allTagsData.length > 0) return Promise.resolve(allTagsData);
+            return fetch(ctx + '/app/api/tags', { credentials: 'same-origin' })
+                .then(function (r) { return r.json(); })
+                .then(function (tags) {
+                    allTagsData = (tags || []).map(function (t) {
+                        return { id: String(t.id), name: t.name, color: t.color };
+                    });
+                    return allTagsData;
+                });
+        }
+
+        function renderBubbleTags() {
+            if (!btfList) return;
+            btfList.innerHTML = '';
+            if (!allTagsData.length) {
+                btfList.innerHTML = '<div class="text-muted small">No tags yet.</div>';
+                return;
+            }
+            allTagsData.forEach(function (t) {
+                var chip = document.createElement('span');
+                chip.className = 'btf-chip';
+                if (activeTagIds.indexOf(String(t.id)) !== -1) chip.classList.add('active');
+                chip.style.background = t.color || '#8b6e4e';
+                chip.textContent = t.name;
+                chip.setAttribute('data-tag-id', t.id);
                 chip.addEventListener('click', function () {
-                    var tid = chip.getAttribute('data-tag-id');
+                    var tid = String(t.id);
                     var idx = activeTagIds.indexOf(tid);
                     if (idx >= 0) {
                         activeTagIds.splice(idx, 1);
@@ -1600,385 +1735,397 @@
                         activeTagIds.push(tid);
                         chip.classList.add('active');
                     }
+                    syncListViewChips();
                     applyFilter();
                 });
+                btfList.appendChild(chip);
             });
+        }
 
-            if (clearBtn) {
-                clearBtn.addEventListener('click', function () {
-                    activeTagIds = [];
-                    filterChips.forEach(function (c) { c.classList.remove('active'); });
-                    applyFilter();
-                });
+        function syncListViewChips() {
+            filterChips.forEach(function (c) {
+                var tid = c.getAttribute('data-tag-id');
+                c.classList.toggle('active', activeTagIds.indexOf(tid) !== -1);
+            });
+        }
+
+        function syncBubbleFilterChips() {
+            if (!btfList) return;
+            btfList.querySelectorAll('.btf-chip').forEach(function (c) {
+                var tid = c.getAttribute('data-tag-id');
+                c.classList.toggle('active', activeTagIds.indexOf(tid) !== -1);
+            });
+        }
+
+        function updateBubbleTagStatus(shown, total) {
+            if (!btfStatus) return;
+            if (activeTagIds.length === 0) {
+                btfStatus.textContent = '';
+            } else {
+                btfStatus.textContent = 'Showing ' + shown + ' of ' + total;
             }
+        }
 
-            // Restore filter state from ?tags=... in the URL (e.g. returning
-            // from the editor with a filter preserved).
-            (function initFilterFromUrl() {
-                var params = new URLSearchParams(window.location.search);
-                var raw = params.get('tags');
-                if (!raw) {
-                    updateEntryHrefs();
-                    return;
-                }
-                var wanted = raw.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
-                var valid = {};
-                filterChips.forEach(function (c) { valid[c.getAttribute('data-tag-id')] = c; });
-                wanted.forEach(function (tid) {
-                    if (valid[tid] && activeTagIds.indexOf(tid) === -1) {
-                        activeTagIds.push(tid);
-                        valid[tid].classList.add('active');
-                    }
-                });
+        function openBubbleTagFilter() {
+            if (!btf) return;
+            ensureAllTagsData().then(function () {
+                renderBubbleTags();
+                btf.setAttribute('aria-hidden', 'false');
+            });
+        }
+        function closeBubbleTagFilter() {
+            if (btf) btf.setAttribute('aria-hidden', 'true');
+        }
+
+        document.addEventListener('jyrnyl:open-tag-filter', openBubbleTagFilter);
+        if (btfClose) btfClose.addEventListener('click', closeBubbleTagFilter);
+        if (btf) {
+            btf.addEventListener('click', function (e) {
+                if (e.target === btf) closeBubbleTagFilter();
+            });
+        }
+        if (btfClear) {
+            btfClear.addEventListener('click', function () {
+                activeTagIds = [];
+                syncBubbleFilterChips();
+                syncListViewChips();
                 applyFilter();
-            })();
+            });
+        }
 
-            // ------------------------------------------------------------------
-            // Reorder mode (list view only)
-            // ------------------------------------------------------------------
-            var reorderToggle = document.getElementById('reorderToggle');
-            var pageList = document.getElementById('pageList');
-            var reordering = false;
-            var draggingEl = null;
+        // ------------------------------------------------------------------
+        // Reorder mode (list view only)
+        // ------------------------------------------------------------------
+        var reorderToggle = document.getElementById('reorderToggle');
+        var pageList = document.getElementById('pageList');
+        var reordering = false;
+        var draggingEl = null;
 
-            function setReordering(on) {
-                reordering = on;
-                document.body.classList.toggle('reorder-mode', on);
-                document.body.classList.toggle('reorder-active', on);
-                if (reorderToggle) {
-                    reorderToggle.classList.toggle('btn-outline-secondary', !on);
-                    reorderToggle.classList.toggle('btn-warning', on);
-                    reorderToggle.innerHTML = on
-                        ? '<i class="bi bi-check-lg"></i> Done'
-                        : '<i class="bi bi-arrows-move"></i> Reorder';
-                }
-                entries.forEach(function (e) {
-                    e.setAttribute('draggable', on ? 'true' : 'false');
-                });
-            }
-
+        function setReordering(on) {
+            reordering = on;
+            document.body.classList.toggle('reorder-mode', on);
+            document.body.classList.toggle('reorder-active', on);
             if (reorderToggle) {
-                reorderToggle.addEventListener('click', function () {
-                    setReordering(!reordering);
-                });
+                reorderToggle.classList.toggle('btn-outline-secondary', !on);
+                reorderToggle.classList.toggle('btn-warning', on);
+                reorderToggle.innerHTML = on
+                    ? '<i class="bi bi-check-lg"></i> Stop reordering'
+                    : '<i class="bi bi-arrows-move"></i> Reorder';
             }
+            entries.forEach(function (e) {
+                e.setAttribute('draggable', on ? 'true' : 'false');
+            });
+        }
 
-            // Prevent nav when in reorder mode so drag/click doesn't open the page
-            entries.forEach(function (entry) {
-                entry.addEventListener('click', function (e) {
-                    if (reordering) e.preventDefault();
-                });
+        if (reorderToggle) {
+            reorderToggle.addEventListener('click', function () {
+                setReordering(!reordering);
+            });
+        }
 
-                entry.addEventListener('dragstart', function (e) {
-                    if (!reordering) { e.preventDefault(); return; }
-                    draggingEl = entry;
-                    entry.classList.add('dragging');
-                    if (e.dataTransfer) {
-                        e.dataTransfer.effectAllowed = 'move';
-                        e.dataTransfer.setData('text/plain', entry.getAttribute('data-page-id'));
-                    }
-                });
-
-                entry.addEventListener('dragend', function () {
-                    if (draggingEl) draggingEl.classList.remove('dragging');
-                    draggingEl = null;
-                    entries.forEach(function (e) { e.classList.remove('drag-over'); });
-                });
-
-                entry.addEventListener('dragover', function (e) {
-                    if (!reordering || !draggingEl || entry === draggingEl) return;
-                    e.preventDefault();
-                    if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
-                    entry.classList.add('drag-over');
-                });
-
-                entry.addEventListener('dragleave', function () {
-                    entry.classList.remove('drag-over');
-                });
-
-                entry.addEventListener('drop', function (e) {
-                    if (!reordering || !draggingEl) return;
-                    e.preventDefault();
-                    entry.classList.remove('drag-over');
-                    if (draggingEl === entry) return;
-                    // Insert draggingEl before the target
-                    var rect = entry.getBoundingClientRect();
-                    var isBelow = (e.clientY - rect.top) > rect.height / 2;
-                    if (isBelow) {
-                        pageList.insertBefore(draggingEl, entry.nextSibling);
-                    } else {
-                        pageList.insertBefore(draggingEl, entry);
-                    }
-                    persistOrder();
-                });
+        entries.forEach(function (entry) {
+            entry.addEventListener('click', function (e) {
+                if (reordering) e.preventDefault();
             });
 
-            function persistOrder() {
-                var ids = Array.prototype.map.call(
-                    pageList.querySelectorAll('.page-entry'),
-                    function (el) { return parseInt(el.getAttribute('data-page-id'), 10); }
-                );
-                // Update the "#n" labels immediately
-                Array.prototype.forEach.call(
-                    pageList.querySelectorAll('.entry-order'),
-                    function (el, idx) { el.textContent = '#' + (idx + 1); }
-                );
-                fetch(ctx + '/app/page/reorder', {
-                    method: 'PUT',
-                    credentials: 'same-origin',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ pageIds: ids })
-                }).catch(function (err) {
-                    console.error('[dashboard] reorder failed', err);
+            entry.addEventListener('dragstart', function (e) {
+                if (!reordering) { e.preventDefault(); return; }
+                draggingEl = entry;
+                entry.classList.add('dragging');
+                if (e.dataTransfer) {
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/plain', entry.getAttribute('data-page-id'));
+                }
+            });
+
+            entry.addEventListener('dragend', function () {
+                if (draggingEl) draggingEl.classList.remove('dragging');
+                draggingEl = null;
+                entries.forEach(function (e) { e.classList.remove('drag-over'); });
+            });
+
+            entry.addEventListener('dragover', function (e) {
+                if (!reordering || !draggingEl || entry === draggingEl) return;
+                e.preventDefault();
+                if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+                entry.classList.add('drag-over');
+            });
+
+            entry.addEventListener('dragleave', function () {
+                entry.classList.remove('drag-over');
+            });
+
+            entry.addEventListener('drop', function (e) {
+                if (!reordering || !draggingEl) return;
+                e.preventDefault();
+                entry.classList.remove('drag-over');
+                if (draggingEl === entry) return;
+                var rect = entry.getBoundingClientRect();
+                var isBelow = (e.clientY - rect.top) > rect.height / 2;
+                if (isBelow) {
+                    pageList.insertBefore(draggingEl, entry.nextSibling);
+                } else {
+                    pageList.insertBefore(draggingEl, entry);
+                }
+                persistOrder();
+            });
+        });
+
+        function persistOrder() {
+            var ids = Array.prototype.map.call(
+                pageList.querySelectorAll('.page-entry'),
+                function (el) { return parseInt(el.getAttribute('data-page-id'), 10); }
+            );
+            Array.prototype.forEach.call(
+                pageList.querySelectorAll('.entry-order'),
+                function (el, idx) { el.textContent = '#' + (idx + 1); }
+            );
+            fetch(ctx + '/app/page/reorder', {
+                method: 'PUT',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pageIds: ids })
+            }).catch(function (err) {
+                console.error('[dashboard] reorder failed', err);
+            });
+        }
+
+        // ------------------------------------------------------------------
+        // Tag management
+        // ------------------------------------------------------------------
+        var tagManageList = document.getElementById('tagManageList');
+        var tagManageModal = document.getElementById('manageTagsModal');
+        var tagDeleteInUse = document.getElementById('tagDeleteInUse');
+        var tagDeleteName = document.getElementById('tagDeleteName');
+        var tagDeleteCount = document.getElementById('tagDeleteCount');
+        var tagReplaceSelect = document.getElementById('tagReplaceSelect');
+        var tagDeleteStripBtn = document.getElementById('tagDeleteStrip');
+        var tagDeleteReplaceBtn = document.getElementById('tagDeleteReplace');
+        var tagDeleteCancelBtn = document.getElementById('tagDeleteCancel');
+        var pendingDeleteTagId = null;
+        var managedTags = [];
+
+        function loadManagedTags() {
+            if (!tagManageList) return;
+            fetch(ctx + '/app/api/tags', { credentials: 'same-origin' })
+                .then(function (r) { return r.json(); })
+                .then(function (tags) {
+                    managedTags = tags;
+                    renderManagedTags(tags);
+                })
+                .catch(function () {
+                    tagManageList.innerHTML = '<div class="text-danger small">Failed to load tags.</div>';
                 });
+        }
+
+        function renderManagedTags(tags) {
+            tagManageList.innerHTML = '';
+            tagDeleteInUse.style.display = 'none';
+            pendingDeleteTagId = null;
+            if (!tags || tags.length === 0) {
+                tagManageList.innerHTML = '<div class="text-muted small">No tags yet.</div>';
+                return;
             }
+            tags.forEach(function (t) {
+                var row = document.createElement('div');
+                row.className = 'tag-manage-row';
+                row.setAttribute('data-tag-id', t.id);
 
-            // ------------------------------------------------------------------
-            // Tag management
-            // ------------------------------------------------------------------
-            var tagManageList = document.getElementById('tagManageList');
-            var tagManageModal = document.getElementById('manageTagsModal');
-            var tagDeleteInUse = document.getElementById('tagDeleteInUse');
-            var tagDeleteName = document.getElementById('tagDeleteName');
-            var tagDeleteCount = document.getElementById('tagDeleteCount');
-            var tagReplaceSelect = document.getElementById('tagReplaceSelect');
-            var tagDeleteStripBtn = document.getElementById('tagDeleteStrip');
-            var tagDeleteReplaceBtn = document.getElementById('tagDeleteReplace');
-            var tagDeleteCancelBtn = document.getElementById('tagDeleteCancel');
-            var pendingDeleteTagId = null;
-            var managedTags = [];
+                var colorInput = document.createElement('input');
+                colorInput.type = 'color';
+                colorInput.className = 'tag-color-input';
+                colorInput.value = t.color || '#6c757d';
+                row.appendChild(colorInput);
 
-            function loadManagedTags() {
-                fetch(ctx + '/app/api/tags', { credentials: 'same-origin' })
-                    .then(function (r) { return r.json(); })
-                    .then(function (tags) {
-                        managedTags = tags;
-                        renderManagedTags(tags);
-                    })
-                    .catch(function () {
-                        tagManageList.innerHTML = '<div class="text-danger small">Failed to load tags.</div>';
+                var nameInput = document.createElement('input');
+                nameInput.type = 'text';
+                nameInput.className = 'tag-name-input';
+                nameInput.value = t.name;
+                nameInput.maxLength = 100;
+                row.appendChild(nameInput);
+
+                var countLabel = document.createElement('span');
+                countLabel.className = 'tag-page-count';
+                countLabel.textContent = t.pageCount === 0 ? 'unused' : t.pageCount + ' pg';
+                row.appendChild(countLabel);
+
+                var saveBtn = document.createElement('button');
+                saveBtn.type = 'button';
+                saveBtn.className = 'btn btn-primary btn-sm tag-save-btn';
+                saveBtn.textContent = 'Save';
+                saveBtn.addEventListener('click', function () {
+                    fetch(ctx + '/app/api/tags/' + t.id, {
+                        method: 'PUT',
+                        credentials: 'same-origin',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: nameInput.value.trim(), color: colorInput.value })
+                    }).then(function (r) {
+                        if (r.ok) {
+                            row.classList.remove('dirty');
+                            loadManagedTags();
+                        } else {
+                            alert('Failed to update tag.');
+                        }
                     });
-            }
+                });
+                row.appendChild(saveBtn);
 
-            function renderManagedTags(tags) {
-                tagManageList.innerHTML = '';
+                var delBtn = document.createElement('button');
+                delBtn.type = 'button';
+                delBtn.className = 'tag-delete-btn';
+                delBtn.title = 'Delete tag';
+                delBtn.innerHTML = '<i class="bi bi-trash3"></i>';
+                delBtn.addEventListener('click', function () {
+                    if (t.pageCount === 0) {
+                        if (!confirm('Delete tag "' + t.name + '"?')) return;
+                        fetch(ctx + '/app/api/tags/' + t.id, {
+                            method: 'DELETE', credentials: 'same-origin'
+                        }).then(function (r) {
+                            if (r.ok || r.status === 204) loadManagedTags();
+                            else alert('Failed to delete tag.');
+                        });
+                    } else {
+                        showTagDeleteInUse(t);
+                    }
+                });
+                row.appendChild(delBtn);
+
+                function markDirty() { row.classList.add('dirty'); }
+                colorInput.addEventListener('input', markDirty);
+                nameInput.addEventListener('input', markDirty);
+
+                tagManageList.appendChild(row);
+            });
+        }
+
+        function showTagDeleteInUse(tag) {
+            pendingDeleteTagId = tag.id;
+            tagDeleteName.textContent = tag.name;
+            tagDeleteCount.textContent = tag.pageCount;
+            tagDeleteInUse.style.display = '';
+            tagReplaceSelect.innerHTML = '';
+            managedTags.forEach(function (t) {
+                if (t.id === tag.id) return;
+                var opt = document.createElement('option');
+                opt.value = t.id;
+                opt.textContent = t.name;
+                tagReplaceSelect.appendChild(opt);
+            });
+        }
+
+        if (tagDeleteCancelBtn) {
+            tagDeleteCancelBtn.addEventListener('click', function () {
                 tagDeleteInUse.style.display = 'none';
                 pendingDeleteTagId = null;
-                if (!tags || tags.length === 0) {
-                    tagManageList.innerHTML = '<div class="text-muted small">No tags yet.</div>';
-                    return;
-                }
-                tags.forEach(function (t) {
-                    var row = document.createElement('div');
-                    row.className = 'tag-manage-row';
-                    row.setAttribute('data-tag-id', t.id);
-
-                    var colorInput = document.createElement('input');
-                    colorInput.type = 'color';
-                    colorInput.className = 'tag-color-input';
-                    colorInput.value = t.color || '#6c757d';
-                    row.appendChild(colorInput);
-
-                    var nameInput = document.createElement('input');
-                    nameInput.type = 'text';
-                    nameInput.className = 'tag-name-input';
-                    nameInput.value = t.name;
-                    nameInput.maxLength = 100;
-                    row.appendChild(nameInput);
-
-                    var countLabel = document.createElement('span');
-                    countLabel.className = 'tag-page-count';
-                    countLabel.textContent = t.pageCount === 0 ? 'unused' : t.pageCount + ' pg';
-                    row.appendChild(countLabel);
-
-                    var saveBtn = document.createElement('button');
-                    saveBtn.type = 'button';
-                    saveBtn.className = 'btn btn-primary btn-sm tag-save-btn';
-                    saveBtn.textContent = 'Save';
-                    saveBtn.addEventListener('click', function () {
-                        fetch(ctx + '/app/api/tags/' + t.id, {
-                            method: 'PUT',
-                            credentials: 'same-origin',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ name: nameInput.value.trim(), color: colorInput.value })
-                        }).then(function (r) {
-                            if (r.ok) {
-                                row.classList.remove('dirty');
-                                loadManagedTags();
-                            } else {
-                                alert('Failed to update tag.');
-                            }
-                        });
-                    });
-                    row.appendChild(saveBtn);
-
-                    var delBtn = document.createElement('button');
-                    delBtn.type = 'button';
-                    delBtn.className = 'tag-delete-btn';
-                    delBtn.title = 'Delete tag';
-                    delBtn.innerHTML = '<i class="bi bi-trash3"></i>';
-                    delBtn.addEventListener('click', function () {
-                        if (t.pageCount === 0) {
-                            if (!confirm('Delete tag "' + t.name + '"?')) return;
-                            fetch(ctx + '/app/api/tags/' + t.id, {
-                                method: 'DELETE', credentials: 'same-origin'
-                            }).then(function (r) {
-                                if (r.ok || r.status === 204) loadManagedTags();
-                                else alert('Failed to delete tag.');
-                            });
-                        } else {
-                            showTagDeleteInUse(t);
-                        }
-                    });
-                    row.appendChild(delBtn);
-
-                    // Mark dirty on change
-                    function markDirty() { row.classList.add('dirty'); }
-                    colorInput.addEventListener('input', markDirty);
-                    nameInput.addEventListener('input', markDirty);
-
-                    tagManageList.appendChild(row);
+            });
+        }
+        if (tagDeleteStripBtn) {
+            tagDeleteStripBtn.addEventListener('click', function () {
+                if (!pendingDeleteTagId) return;
+                fetch(ctx + '/app/api/tags/' + pendingDeleteTagId, {
+                    method: 'DELETE', credentials: 'same-origin'
+                }).then(function (r) {
+                    if (r.ok || r.status === 204) loadManagedTags();
+                    else alert('Failed to delete tag.');
                 });
-            }
-
-            function showTagDeleteInUse(tag) {
-                pendingDeleteTagId = tag.id;
-                tagDeleteName.textContent = tag.name;
-                tagDeleteCount.textContent = tag.pageCount;
-                tagDeleteInUse.style.display = '';
-
-                // Populate replace dropdown with all OTHER tags
-                tagReplaceSelect.innerHTML = '';
-                managedTags.forEach(function (t) {
-                    if (t.id === tag.id) return;
-                    var opt = document.createElement('option');
-                    opt.value = t.id;
-                    opt.textContent = t.name;
-                    tagReplaceSelect.appendChild(opt);
+            });
+        }
+        if (tagDeleteReplaceBtn) {
+            tagDeleteReplaceBtn.addEventListener('click', function () {
+                if (!pendingDeleteTagId) return;
+                var replaceId = tagReplaceSelect.value;
+                if (!replaceId) { alert('Select a tag to replace with.'); return; }
+                fetch(ctx + '/app/api/tags/' + pendingDeleteTagId + '?replaceWith=' + replaceId, {
+                    method: 'DELETE', credentials: 'same-origin'
+                }).then(function (r) {
+                    if (r.ok || r.status === 204) loadManagedTags();
+                    else alert('Failed to replace and delete tag.');
                 });
-            }
+            });
+        }
+        if (tagManageModal) {
+            tagManageModal.addEventListener('show.bs.modal', loadManagedTags);
+        }
 
-            if (tagDeleteCancelBtn) {
-                tagDeleteCancelBtn.addEventListener('click', function () {
-                    tagDeleteInUse.style.display = 'none';
-                    pendingDeleteTagId = null;
-                });
-            }
+        // ------------------------------------------------------------------
+        // Delete page (list view)
+        // ------------------------------------------------------------------
+        var deleteModal = document.getElementById('deletePageModal');
+        var deleteMsg = document.getElementById('deletePageMsg');
+        var deleteLockedWrap = document.getElementById('deleteLockedWrap');
+        var deleteConfirmInput = document.getElementById('deleteConfirmInput');
+        var deleteConfirmBtn = document.getElementById('deletePageConfirmBtn');
+        var pendingDeleteId = null;
+        var pendingDeleteLocked = false;
 
-            if (tagDeleteStripBtn) {
-                tagDeleteStripBtn.addEventListener('click', function () {
-                    if (!pendingDeleteTagId) return;
-                    fetch(ctx + '/app/api/tags/' + pendingDeleteTagId, {
-                        method: 'DELETE', credentials: 'same-origin'
-                    }).then(function (r) {
-                        if (r.ok || r.status === 204) loadManagedTags();
-                        else alert('Failed to delete tag.');
-                    });
-                });
-            }
+        if (deleteModal) {
+            var bsDeleteModal = new bootstrap.Modal(deleteModal);
 
-            if (tagDeleteReplaceBtn) {
-                tagDeleteReplaceBtn.addEventListener('click', function () {
-                    if (!pendingDeleteTagId) return;
-                    var replaceId = tagReplaceSelect.value;
-                    if (!replaceId) { alert('Select a tag to replace with.'); return; }
-                    fetch(ctx + '/app/api/tags/' + pendingDeleteTagId + '?replaceWith=' + replaceId, {
-                        method: 'DELETE', credentials: 'same-origin'
-                    }).then(function (r) {
-                        if (r.ok || r.status === 204) loadManagedTags();
-                        else alert('Failed to replace and delete tag.');
-                    });
-                });
-            }
+            document.addEventListener('click', function (e) {
+                var btn = e.target.closest('.delete-page-btn');
+                if (!btn) return;
+                e.preventDefault();
+                e.stopPropagation();
 
-            if (tagManageModal) {
-                tagManageModal.addEventListener('show.bs.modal', loadManagedTags);
-            }
+                pendingDeleteId = btn.getAttribute('data-page-id');
+                pendingDeleteLocked = btn.getAttribute('data-locked') === 'true';
 
-            // ------------------------------------------------------------------
-            // Delete page
-            // ------------------------------------------------------------------
-            var deleteModal = document.getElementById('deletePageModal');
-            var deleteMsg = document.getElementById('deletePageMsg');
-            var deleteLockedWrap = document.getElementById('deleteLockedWrap');
-            var deleteConfirmInput = document.getElementById('deleteConfirmInput');
-            var deleteConfirmBtn = document.getElementById('deletePageConfirmBtn');
-            var pendingDeleteId = null;
-            var pendingDeleteLocked = false;
-
-            if (deleteModal) {
-                var bsDeleteModal = new bootstrap.Modal(deleteModal);
-
-                // Intercept delete button clicks on page entries
-                document.addEventListener('click', function (e) {
-                    var btn = e.target.closest('.delete-page-btn');
-                    if (!btn) return;
-                    e.preventDefault();
-                    e.stopPropagation();
-
-                    pendingDeleteId = btn.getAttribute('data-page-id');
-                    pendingDeleteLocked = btn.getAttribute('data-locked') === 'true';
-
-                    if (pendingDeleteLocked) {
-                        deleteMsg.textContent = 'This is a locked page. Deletion is permanent.';
-                        deleteLockedWrap.style.display = '';
-                        deleteConfirmInput.value = '';
-                        deleteConfirmBtn.disabled = true;
-                    } else {
-                        deleteMsg.textContent = 'This page will be permanently deleted.';
-                        deleteLockedWrap.style.display = 'none';
-                        deleteConfirmBtn.disabled = false;
-                    }
-
-                    bsDeleteModal.show();
-                });
-
-                // For locked pages, enable confirm only when DELETE is typed
-                if (deleteConfirmInput) {
-                    deleteConfirmInput.addEventListener('input', function () {
-                        deleteConfirmBtn.disabled = (deleteConfirmInput.value !== 'DELETE');
-                    });
-                }
-
-                // Reset state when modal is hidden
-                deleteModal.addEventListener('hidden.bs.modal', function () {
-                    pendingDeleteId = null;
-                    pendingDeleteLocked = false;
+                if (pendingDeleteLocked) {
+                    deleteMsg.textContent = 'This is a locked page. Deletion is permanent.';
+                    deleteLockedWrap.style.display = '';
                     deleteConfirmInput.value = '';
                     deleteConfirmBtn.disabled = true;
-                });
+                } else {
+                    deleteMsg.textContent = 'This page will be permanently deleted.';
+                    deleteLockedWrap.style.display = 'none';
+                    deleteConfirmBtn.disabled = false;
+                }
 
-                // Perform the delete
-                deleteConfirmBtn.addEventListener('click', function () {
-                    if (!pendingDeleteId) return;
-                    if (pendingDeleteLocked && deleteConfirmInput.value !== 'DELETE') return;
+                bsDeleteModal.show();
+            });
 
-                    var id = pendingDeleteId;
-                    deleteConfirmBtn.disabled = true;
-                    deleteConfirmBtn.textContent = 'Deleting\u2026';
-
-                    fetch(ctx + '/app/page/' + id, {
-                        method: 'DELETE',
-                        credentials: 'same-origin'
-                    }).then(function (r) {
-                        if (r.ok || r.status === 204) {
-                            // Remove from DOM
-                            var entry = document.querySelector('.page-entry[data-page-id="' + id + '"]');
-                            if (entry) entry.remove();
-                            bsDeleteModal.hide();
-                        } else {
-                            alert('Failed to delete page (' + r.status + ').');
-                        }
-                    }).catch(function (err) {
-                        alert('Network error: ' + err.message);
-                    }).finally(function () {
-                        deleteConfirmBtn.textContent = 'Yes, delete';
-                        deleteConfirmBtn.disabled = false;
-                    });
+            if (deleteConfirmInput) {
+                deleteConfirmInput.addEventListener('input', function () {
+                    deleteConfirmBtn.disabled = (deleteConfirmInput.value !== 'DELETE');
                 });
             }
-        })();
-    </script>
-    <%@ include file="/WEB-INF/jspf/pwa-register.jspf" %>
+
+            deleteModal.addEventListener('hidden.bs.modal', function () {
+                pendingDeleteId = null;
+                pendingDeleteLocked = false;
+                deleteConfirmInput.value = '';
+                deleteConfirmBtn.disabled = true;
+            });
+
+            deleteConfirmBtn.addEventListener('click', function () {
+                if (!pendingDeleteId) return;
+                if (pendingDeleteLocked && deleteConfirmInput.value !== 'DELETE') return;
+
+                var id = pendingDeleteId;
+                deleteConfirmBtn.disabled = true;
+                deleteConfirmBtn.textContent = 'Deleting\u2026';
+
+                fetch(ctx + '/app/page/' + id, {
+                    method: 'DELETE',
+                    credentials: 'same-origin'
+                }).then(function (r) {
+                    if (r.ok || r.status === 204) {
+                        var entry = document.querySelector('.page-entry[data-page-id="' + id + '"]');
+                        if (entry) entry.remove();
+                        bsDeleteModal.hide();
+                    } else {
+                        alert('Failed to delete page (' + r.status + ').');
+                    }
+                }).catch(function (err) {
+                    alert('Network error: ' + err.message);
+                }).finally(function () {
+                    deleteConfirmBtn.textContent = 'Yes, delete';
+                    deleteConfirmBtn.disabled = false;
+                });
+            });
+        }
+    })();
+</script>
+<%@ include file="/WEB-INF/jspf/pwa-register.jspf" %>
 </body>
 </html>

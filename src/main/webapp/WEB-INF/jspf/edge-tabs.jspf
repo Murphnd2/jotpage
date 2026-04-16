@@ -1,0 +1,184 @@
+<%--
+    Jyrnyl — edge tabs for the editor.
+    Left tab: first/prev page navigation.
+    Right tab: next/last page navigation.
+    Top center tab: delete + tag page actions.
+    All tabs glow on hover and auto-save before navigating.
+--%>
+
+<%-- Left edge: first + prev --%>
+<div id="edgeTabLeft" class="edge-tab edge-tab-left" aria-label="Navigate backward">
+    <button type="button" class="et-btn" data-action="first" aria-label="First page">
+        <i class="bi bi-chevron-double-left" aria-hidden="true"></i>
+    </button>
+    <button type="button" class="et-btn" data-action="prev" aria-label="Previous page">
+        <i class="bi bi-chevron-left" aria-hidden="true"></i>
+    </button>
+</div>
+
+<%-- Right edge: next + last --%>
+<div id="edgeTabRight" class="edge-tab edge-tab-right" aria-label="Navigate forward">
+    <button type="button" class="et-btn" data-action="next" aria-label="Next page">
+        <i class="bi bi-chevron-right" aria-hidden="true"></i>
+    </button>
+    <button type="button" class="et-btn" data-action="last" aria-label="Last page">
+        <i class="bi bi-chevron-double-right" aria-hidden="true"></i>
+    </button>
+</div>
+
+<%-- Top center: delete + tag --%>
+<div id="edgeTabTop" class="edge-tab edge-tab-top" aria-label="Page actions">
+    <button type="button" class="et-btn" data-action="tag" aria-label="Tag this page">
+        <i class="bi bi-tags" aria-hidden="true"></i>
+    </button>
+    <button type="button" class="et-btn et-danger" data-action="delete" aria-label="Delete page">
+        <i class="bi bi-trash3" aria-hidden="true"></i>
+    </button>
+</div>
+
+<style>
+    /* ============================================================ */
+    /* Edge tabs — shared base                                      */
+    /* ============================================================ */
+    .edge-tab {
+        position: fixed;
+        z-index: 15;
+        display: flex;
+        gap: 2px;
+        background: rgba(61, 42, 34, 0.55);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        opacity: 0.3;
+        transition:
+            opacity 0.22s ease,
+            transform 0.22s ease,
+            box-shadow 0.22s ease,
+            background 0.22s ease;
+        touch-action: manipulation;
+    }
+    .edge-tab:hover,
+    .edge-tab:focus-within {
+        opacity: 0.85;
+        background: rgba(61, 42, 34, 0.82);
+        box-shadow:
+            0 0 12px rgba(212, 148, 58, 0.3),
+            0 0 24px rgba(212, 148, 58, 0.12);
+    }
+    .edge-tab.flash {
+        opacity: 1;
+        background: rgba(61, 42, 34, 0.92);
+        box-shadow:
+            0 0 16px rgba(212, 148, 58, 0.5),
+            0 0 32px rgba(212, 148, 58, 0.2);
+        transition-duration: 0.06s;
+    }
+    .edge-tab.hidden {
+        display: none !important;
+    }
+
+    /* Pulse/glow animation on hover */
+    @keyframes et-glow-pulse {
+        0%, 100% { box-shadow: 0 0 8px rgba(212, 148, 58, 0.2); }
+        50%      { box-shadow: 0 0 18px rgba(212, 148, 58, 0.45); }
+    }
+    .edge-tab:hover {
+        animation: et-glow-pulse 2s ease-in-out infinite;
+    }
+    .edge-tab:active,
+    .edge-tab.flash {
+        animation: none;
+    }
+
+    /* Buttons inside edge tabs */
+    .edge-tab .et-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border: none;
+        background: transparent;
+        color: rgba(255, 253, 247, 0.85);
+        font-size: 1rem;
+        cursor: pointer;
+        border-radius: 4px;
+        transition: background 0.12s ease, color 0.12s ease;
+        padding: 0;
+    }
+    .edge-tab .et-btn:hover {
+        background: rgba(255, 253, 247, 0.12);
+        color: #fff;
+    }
+    .edge-tab .et-btn.et-danger:hover {
+        background: rgba(160, 82, 45, 0.35);
+        color: #ffb8a0;
+    }
+
+    /* Loading spinner replaces icon while saving */
+    .edge-tab .et-btn .et-spinner {
+        display: none;
+        width: 16px;
+        height: 16px;
+        border: 2px solid rgba(255, 253, 247, 0.4);
+        border-top-color: transparent;
+        border-radius: 50%;
+        animation: et-spin 0.7s linear infinite;
+    }
+    .edge-tab .et-btn.loading .et-spinner { display: block; }
+    .edge-tab .et-btn.loading i { display: none; }
+    @keyframes et-spin { to { transform: rotate(360deg); } }
+
+    /* ============================================================ */
+    /* Left tab — left edge, vertically centered, stacked           */
+    /* ============================================================ */
+    .edge-tab-left {
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        flex-direction: column;
+        padding: 6px 6px 6px 8px;
+        border-radius: 0 10px 10px 0;
+    }
+
+    /* ============================================================ */
+    /* Right tab — right edge, vertically centered, stacked         */
+    /* ============================================================ */
+    .edge-tab-right {
+        right: 0;
+        top: 50%;
+        transform: translateY(-50%) translateX(6px);
+        flex-direction: column;
+        padding: 6px 8px 6px 4px;
+        border-radius: 10px 0 0 10px;
+    }
+    .edge-tab-right:hover,
+    .edge-tab-right:focus-within {
+        transform: translateY(-50%) translateX(0);
+    }
+
+    /* ============================================================ */
+    /* Top center tab — horizontal, slight tuck upward              */
+    /* ============================================================ */
+    .edge-tab-top {
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%) translateY(-6px);
+        flex-direction: row;
+        padding: 4px 8px 8px;
+        border-radius: 0 0 10px 10px;
+    }
+    .edge-tab-top:hover,
+    .edge-tab-top:focus-within {
+        transform: translateX(-50%) translateY(0);
+    }
+
+    /* ============================================================ */
+    /* Fade edge tabs while drawing                                 */
+    /* ============================================================ */
+    body.drawing-active .edge-tab {
+        opacity: 0.04 !important;
+        animation: none !important;
+        pointer-events: none;
+        transition-duration: 0.15s;
+    }
+</style>

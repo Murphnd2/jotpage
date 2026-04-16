@@ -74,16 +74,25 @@ jotpage/
 │   ├── css/
 │   │   └── theme.css                 # Shared warm Moleskine theme (CSS vars, Bootstrap overrides)
 │   ├── js/
-│   │   ├── ink-engine.js             # Canvas drawing engine (pen, eraser, text blocks, undo/redo)
-│   │   ├── book-view.js              # Dashboard book view (spreads, thumbnails, swipe, cover)
-│   │   ├── tablet-mode.js            # Tablet immersive mode (FAB, panel, auto-save, swipe nav)
+│   │   ├── ink-engine.js             # Canvas drawing engine (pen, eraser, text blocks, undo/redo, localStorage tool prefs)
+│   │   ├── book-view.js              # Dashboard book view (spreads, thumbnails, swipe, immersive cover landing)
+│   │   ├── tablet-mode.js            # Tablet immersive slim edition (auto-save, gesture prevention, 2-finger swipe)
+│   │   ├── bubble-menu.js            # Floating menu button (☰) — 5 universal actions on both pages
+│   │   ├── pen-button.js             # Floating pen button (✏️) — toggles and positions the drawing toolbar (editor)
+│   │   ├── edge-tabs.js              # Edge tabs — left/right page nav + top delete/tag (editor)
 │   │   └── voice-recorder.js         # Voice entry client (MediaRecorder, SpeechRecognition, upload)
 │   ├── jsp/
-│   │   ├── dashboard.jsp             # Notebook dashboard (book view default, list view alternate)
-│   │   ├── editor.jsp                # Canvas editor (navbar, toolbar, tag bar, tablet immersive)
-│   │   └── voice-record.jsp          # Voice entry page (record/upload tabs, mode selector)
+│   │   ├── dashboard.jsp             # Notebook dashboard (immersive cover landing, book view default, list view as sort utility)
+│   │   ├── editor.jsp                # Canvas editor (floating toolbar, edge tabs, pen + menu buttons)
+│   │   └── voice-record.jsp         # Voice entry page (record/upload tabs, mode selector)
 │   ├── WEB-INF/
-│   │   └── web.xml                   # Servlet/filter mappings only (no secrets)
+│   │   ├── web.xml                   # Servlet/filter mappings only (no secrets)
+│   │   └── jspf/
+│   │       ├── pwa-head.jspf         # PWA manifest/icon link tags
+│   │       ├── pwa-register.jspf     # Service worker registration snippet
+│   │       ├── bubble-menu.jspf      # Menu button markup + inline CSS (both pages)
+│   │       ├── pen-button.jspf       # Pen button markup + inline CSS (editor)
+│   │       └── edge-tabs.jspf        # Edge tabs markup + inline CSS (editor)
 │   └── META-INF/
 │       └── context.xml               # Empty <Context/> (DB config moved to properties file)
 ```
@@ -246,48 +255,75 @@ After deploy, users may need a hard-refresh (Ctrl+Shift+R) once — the service 
 - Pen tool (pressure-sensitive via Pointer Events API)
 - Eraser tool (stroke-level hit testing)
 - Text tool (contenteditable overlays, drag handle, resize handle)
-- Font size control (2–64pt range, shown only when text block selected)
+- Font size control (2–64pt range, default 4pt, shown only when text block selected)
 - Color picker, thickness slider (1–20)
 - Undo/redo (stroke-level history, Ctrl+Z / Ctrl+Y)
-- Save (PUT /app/page/{id}), Ctrl+S shortcut
-- Tags (add/remove via API, popover UI)
-- Prev/Next page navigation (preserves ?tags= filter and ?immersive=1 mode)
+- Save (PUT /app/page/{id}), Ctrl+S shortcut, auto-save every 10s when dirty, on page hide, and beforeunload
+- Tags (add/remove via API, modal UI opened from top-center edge tab)
+- Tool-preference persistence: pen color + thickness + font size saved to `localStorage('jyrnyl.tool.prefs')` and restored on page load so they survive navigation and logout
 
-### Tablet immersive mode (tablet-mode.js)
-- Auto-activates on `(pointer: coarse) and (min-width: 768px)`, or via toggle button, or `?immersive=1` URL param
-- Canvas fills 100dvh × 100dvw
-- Floating toolbar pill (auto-hides after 5s of drawing, reappears on pen lift)
-- FAB (top-right) opens slide-out panel with reparented navbar + tag bar
-- Auto-save every 30s if dirty
-- "Saved" flash toast near FAB (via MutationObserver on #save-status)
-- Two-finger swipe: left=next, right=prev (calls inkEngine.cancelStroke() to abort any single-finger stroke)
-- Browser gesture prevention: touch-action:none, overscroll-behavior:none, contextmenu blocked
-- Prev/next hrefs rewritten with &immersive=1 to preserve mode across page flips
+### UI architecture (post-overhaul, April 2026)
+The editor has three distinct floating interaction zones:
+
+1. **Menu button** (☰, brown, draggable, edge-snapping) — universal 5-action radial burst (New track, Sort pages, Filter by tag, Voice booth, Logout). Position saved to `localStorage('jyrnyl.menu.pos')`. Shared with the dashboard; same 5 items everywhere.
+2. **Pen button** (✏️, gold, draggable, edge-snapping, editor only) — single tap toggles the drawing toolbar visible/hidden. Position saved to `localStorage('jyrnyl.pen.pos')`. Toolbar floats adjacent to this button (extends leftward from right edge, rightward from left edge, horizontal from top/bottom).
+3. **Edge tabs** (fixed, editor only):
+   - Left edge tab: `⟪` First page + `<` Previous page
+   - Right edge tab: `>` Next page + `⟫` Last page
+   - Top-center tab: Tag this page + Delete this page
+   All tabs sit translucently at the edge, glow/pulse on hover, flash on tap, and call save-then-navigate before leaving. Positioned at top-center (not bottom) to avoid Android home-button / gesture-bar conflicts.
+
+Shared fragments: `WEB-INF/jspf/bubble-menu.jspf` + `js/bubble-menu.js` (on both pages), `WEB-INF/jspf/pen-button.jspf` + `js/pen-button.js` (editor), `WEB-INF/jspf/edge-tabs.jspf` + `js/edge-tabs.js` (editor). Events dispatched on `document`:
+- `jyrnyl:open-new-page-modal` — dashboard opens template modal
+- `jyrnyl:open-tag-filter` — dashboard opens tag-filter popover
+- `jyrnyl:toggle-toolbar` — editor shows/hides drawing toolbar
+- `jyrnyl:open-tag-editor` — editor opens page-tag modal
+- `jyrnyl:delete-page` — editor opens delete confirmation
+- `jyrnyl:save-and-navigate` (with `detail.href`) — editor auto-saves then navigates
+
+### Tablet immersive mode (tablet-mode.js, post-overhaul)
+Stripped down from the pre-overhaul version. Activates on `(pointer: coarse) and (min-width: 768px)` or `?immersive=1`. What remains:
+- 30s auto-save while dirty
+- Browser gesture prevention (touchmove outside canvas, contextmenu, gesturestart)
+- Two-finger horizontal swipe on the canvas → dispatches `jyrnyl:save-and-navigate` so edge-tab logic auto-saves before flipping pages
+
+Removed: FAB, slide-out panel, reparented navbar/tag-bar, href rewriting for `?immersive=1`, toggle button, toolbar auto-hide timer (the pen button owns toolbar visibility now).
 
 ### External API (ink-engine.js → window.inkEngine)
 - `cancelStroke()` — aborts in-progress stroke without committing to strokes array
 
 ## Dashboard
 
-### Views
-- **Book view** (default): two-page spread layout, leather desk background, animated cover
-  - Lazy-fetches ink data via `/app/api/page-thumbnail/{id}`
-  - Renders miniature text preview (word-wrapped) or skeleton placeholder
-  - "Add Page" slot after last real page, opens template chooser modal
-  - Cover-only mode: hides left page, centers cover on right
-  - Keyboard arrows, touch swipe, prev/next buttons
-  - Tag filter (union/OR semantics)
-- **List view**: vertical notebook list with CSS page-type thumbnails
-  - Drag-to-reorder (HTML5 DnD, POST to /app/page/reorder)
-  - Tag filter with "Showing X of Y pages" counter
-- View toggle in header preserves ?tags= param
-- Tag filter state restored from URL ?tags= on page load
-- Voice Entry button links to /app/voice-record
+### Landing: immersive cover
+On initial load, the dashboard drops the user onto a full-viewport leather desk with the book cover centered on it — no header chrome, no nav bar, no buttons. The only visible UI is the floating menu button (☰). Tapping the cover, pressing → / Enter / Space, or swiping left "opens" the book to the newest-page spread. Going back past the first spread returns to the cover landing state.
+
+### Book view
+- Two-page spread layout (mobile: single page). Lazy-fetches ink data via `/app/api/page-thumbnail/{id}`.
+- Renders miniature text preview (word-wrapped) or skeleton placeholder.
+- "Add Page" slot after the last real page, opens template chooser modal via the menu button.
+- Keyboard arrows (←/→/Home/End) and touch swipe navigate spreads.
+- Tag filter applied via the menu button's "Filter by tag" action → opens a modal popover with chip toggles. On filter, jumps to newest matching page.
+
+### Book cover design
+- Leather-brown radial gradient with gold-foil double-border inset (`::before` at 22px) and an embossed inner frame (`::after` at 32px/56px — bottom pushed up so the footer sits in the gap between the two frames).
+- Centered gold-stamped emblem: the `jyrnyl-logo-square.svg` rendered with `mix-blend-mode: screen` + `filter: sepia(0.6) saturate(2.2) brightness(0.75)` so the SVG's dark background disappears into the leather and the light elements glow as warm gold.
+- Footer: avatar + display name + track count, sitting between the inner and outer border frames.
+
+### List view (Sort pages utility)
+- No longer a primary view. Accessed only via the menu button's "Sort pages" action, which navigates to `?view=list&sort=1`. The `sort=1` param causes the dashboard to clear any active tag filter on load (so drag-reorder is predictable).
+- Top bar: "Sort your pages" heading + subhead + **Reorder toggle** + **Done button** (returns to book view).
+- Tag filter chips bar still shown for browsing; click a chip to filter the list.
+- Drag-to-reorder (HTML5 DnD, POST to /app/page/reorder).
+- Page-delete buttons on hover (all tiers).
 
 ### New Page modal
-- Lists system + user custom templates
-- Custom template creation: name + PNG upload (multipart, max 5MB, PNG magic-number validation)
-- Delete button on user-owned templates (409 if pages still reference it)
+- Lists system + user custom templates.
+- Custom template creation: name + PNG upload (multipart, max 5MB, PNG magic-number validation).
+- Delete button on user-owned templates (409 if pages still reference it).
+- Opened via menu button's "New track" action. When triggered from the editor, navigates to `?new=1` and the dashboard auto-opens the modal.
+
+## Login page
+Simplified after overhaul — the card just contains the full-bleed `jyrnyl-logo-square.svg` (scaled to fill the inner border frame with matching rounded corners). Sign-in button floats below the card as its own element. No heading, subtitle, or footer text.
 
 ## Voice Entry Pipeline
 

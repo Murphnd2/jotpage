@@ -1,0 +1,61 @@
+<%--
+    Jyrnyl — floating pen button.
+    Editor-only. Toggles the drawing toolbar visible/hidden.
+    Draggable, edge-snapping, position saved to localStorage('jyrnyl.pen.pos').
+--%>
+<div id="penButton" class="pen-button" role="button" aria-label="Toggle pen tools" tabindex="0">
+    <i class="bi bi-pen-fill" aria-hidden="true"></i>
+</div>
+
+<style>
+    .pen-button {
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 58;
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        border: 1px solid rgba(212, 148, 58, 0.65);
+        background:
+            radial-gradient(circle at 34% 30%, #e8b44c 0%, #c9943a 40%, #a8782e 100%);
+        color: #3b2f2f;
+        font-size: 1.3rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: grab;
+        box-shadow:
+            0 2px 3px rgba(0,0,0,0.15),
+            0 6px 16px rgba(161,120,46,0.35),
+            inset 0 1px 0 rgba(255,255,255,0.35);
+        user-select: none;
+        -webkit-user-select: none;
+        touch-action: none;
+        transition: transform 0.12s ease, box-shadow 0.15s ease, opacity 0.18s ease;
+    }
+    .pen-button:hover {
+        transform: scale(1.05);
+        box-shadow:
+            0 2px 3px rgba(0,0,0,0.18),
+            0 8px 22px rgba(161,120,46,0.45),
+            inset 0 1px 0 rgba(255,255,255,0.4);
+    }
+    .pen-button:active,
+    .pen-button.dragging {
+        cursor: grabbing;
+        transform: scale(0.96);
+    }
+    .pen-button.active {
+        background:
+            radial-gradient(circle at 34% 30%, #f0c25e 0%, #d4a43e 40%, #b8883a 100%);
+        box-shadow:
+            0 2px 3px rgba(0,0,0,0.2),
+            0 8px 22px rgba(161,120,46,0.5),
+            inset 0 1px 0 rgba(255,255,255,0.4),
+            0 0 14px rgba(212,148,58,0.35);
+    }
+    .pen-button.faded {
+        opacity: 0.15;
+    }
+</style>

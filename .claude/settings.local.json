@@ -9,7 +9,16 @@
       "Bash(\"C:/Users/kevinmurphy/.jdks/openjdk-24/bin/javac\" --version)",
       "Bash(where mvn:*)",
       "Bash(xargs grep:*)",
-      "Bash(find /c/Users/kevinmurphy/IdeaProjects/jotpage/src/main/java -type f -name \"*.java\" -exec grep -l \"tag\\\\|Tag\" {} \\\\;)"
+      "Bash(find /c/Users/kevinmurphy/IdeaProjects/jotpage/src/main/java -type f -name \"*.java\" -exec grep -l \"tag\\\\|Tag\" {} \\\\;)",
+      "Bash(mvn -q clean package -DskipTests)",
+      "Bash(ls /c/apache-maven*)",
+      "Bash(find /c -maxdepth 3 -name \"mvn.cmd\")",
+      "Bash(unzip -p target/jotpage.war js/bubble-menu.js)",
+      "Bash(ssh deploy@66.179.248.54 'ls -la /home/deploy/jyrnyl/jotpage.war && ls -la /var/lib/tomcat10/webapps/ROOT.war && unzip -p /home/deploy/jyrnyl/jotpage.war js/bubble-menu.js | head -5')",
+      "Bash(ssh deploy@66.179.248.54 'jar tf /var/lib/tomcat10/webapps/ROOT.war | grep bubble-menu')",
+      "Bash(ssh deploy@66.179.248.54 'cat /var/lib/tomcat10/webapps/ROOT/js/bubble-menu.js | head -45')",
+      "Bash(ssh deploy@66.179.248.54 'sudo cat /var/lib/tomcat10/webapps/ROOT/js/bubble-menu.js | head -45')",
+      "Bash(ssh -t deploy@66.179.248.54 'sudo head -45 /var/lib/tomcat10/webapps/ROOT/js/bubble-menu.js')"
     ]
   }
 }

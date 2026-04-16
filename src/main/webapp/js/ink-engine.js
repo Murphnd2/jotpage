@@ -11,7 +11,7 @@
     // the stored canvas-pixel value directly (multiplied by the display
     // scale factor in layoutTextBlock).
     var POINT_TO_PIXEL = 10;
-    var DEFAULT_FONT_POINT = 16;
+    var DEFAULT_FONT_POINT = 4;
 
     var canvas = document.getElementById('ink-canvas');
     var wrap = document.getElementById('canvas-wrap');
@@ -36,10 +36,23 @@
     var btnImage = document.getElementById('tool-image');
 
 
+    // Restore persisted tool preferences from localStorage
+    var _savedColor = '#000000';
+    var _savedThickness = 3;
+    var _savedFontPoint = DEFAULT_FONT_POINT;
+    try {
+        var _prefs = JSON.parse(window.localStorage.getItem('jyrnyl.tool.prefs'));
+        if (_prefs) {
+            if (typeof _prefs.color === 'string' && /^#[0-9a-fA-F]{6}$/.test(_prefs.color)) _savedColor = _prefs.color;
+            if (typeof _prefs.thickness === 'number' && _prefs.thickness >= 1 && _prefs.thickness <= 20) _savedThickness = _prefs.thickness;
+            if (typeof _prefs.fontPoint === 'number' && _prefs.fontPoint >= 2 && _prefs.fontPoint <= 64) _savedFontPoint = _prefs.fontPoint;
+        }
+    } catch (e) { /* ignore */ }
+
     var state = {
         tool: 'pen',
-        color: '#000000',
-        thickness: 3,
+        color: _savedColor,
+        thickness: _savedThickness,
         strokes: [],
         currentStroke: null,
         activePointerId: null,
@@ -51,6 +64,21 @@
         imageLayers: [],
         selectedImageId: null
     };
+
+    // Apply restored values to the UI controls
+    if (colorInput) colorInput.value = state.color;
+    if (thicknessInput) { thicknessInput.value = state.thickness; thicknessValue.textContent = state.thickness; }
+    if (fontSizeSelect) fontSizeSelect.value = String(_savedFontPoint);
+
+    function saveToolPrefs() {
+        try {
+            window.localStorage.setItem('jyrnyl.tool.prefs', JSON.stringify({
+                color: state.color,
+                thickness: state.thickness,
+                fontPoint: parseInt(fontSizeSelect ? fontSizeSelect.value : DEFAULT_FONT_POINT, 10)
+            }));
+        } catch (e) { /* ignore */ }
+    }
 
     // ------------------------------------------------------------------
     // Initial strokes from pageData
@@ -682,6 +710,7 @@
     }
     colorInput.addEventListener('input', function () {
         state.color = colorInput.value;
+        saveToolPrefs();
         if (state.selectedTextId) {
             var tb = findTextBlock(state.selectedTextId);
             if (tb) {
@@ -694,6 +723,7 @@
     thicknessInput.addEventListener('input', function () {
         state.thickness = parseInt(thicknessInput.value, 10);
         thicknessValue.textContent = state.thickness;
+        saveToolPrefs();
     });
     btnUndo.addEventListener('click', undo);
     btnRedo.addEventListener('click', redo);
@@ -703,6 +733,7 @@
         // equivalent (point * 10) on the text block so layout maths stays
         // consistent with stored layers loaded from the server.
         var pointSize = parseInt(fontSizeSelect.value, 10);
+        saveToolPrefs();
         if (!state.selectedTextId || isNaN(pointSize)) return;
         var tb = findTextBlock(state.selectedTextId);
         if (!tb) return;
@@ -1060,12 +1091,13 @@
     }
 
     function createTextBlockAt(x, y) {
+        var currentFontPoint = parseInt(fontSizeSelect ? fontSizeSelect.value : DEFAULT_FONT_POINT, 10) || DEFAULT_FONT_POINT;
         var tb = normalizeTextBlock({
             id: genId(),
             x: x,
             y: y,
             text: '',
-            fontSize: DEFAULT_FONT_POINT * POINT_TO_PIXEL,
+            fontSize: currentFontPoint * POINT_TO_PIXEL,
             color: state.color,
             width: 300
         });
