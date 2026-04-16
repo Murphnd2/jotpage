@@ -607,11 +607,11 @@
         window.CONTEXT_PATH = CONTEXT_PATH;
         console.log('[editor.jsp] pageData set to', pageData);
     </script>
-    <script src="${pageContext.request.contextPath}/js/ink-engine.js?v=5"></script>
-    <script src="${pageContext.request.contextPath}/js/tablet-mode.js?v=5"></script>
-    <script src="${pageContext.request.contextPath}/js/bubble-menu.js?v=5"></script>
-    <script src="${pageContext.request.contextPath}/js/pen-button.js?v=5"></script>
-    <script src="${pageContext.request.contextPath}/js/edge-tabs.js?v=5"></script>
+    <script src="${pageContext.request.contextPath}/js/ink-engine.js?v=9"></script>
+    <script src="${pageContext.request.contextPath}/js/tablet-mode.js?v=9"></script>
+    <script src="${pageContext.request.contextPath}/js/bubble-menu.js?v=9"></script>
+    <script src="${pageContext.request.contextPath}/js/pen-button.js?v=9"></script>
+    <script src="${pageContext.request.contextPath}/js/edge-tabs.js?v=9"></script>
 
     <script>
         (function () {

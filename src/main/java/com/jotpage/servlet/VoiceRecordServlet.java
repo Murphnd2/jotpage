@@ -19,6 +19,7 @@ import com.jotpage.util.AppConfig;
 import com.jotpage.util.ClaudeService;
 import com.jotpage.util.PageSplitter;
 import com.jotpage.util.TierCheck;
+import com.jotpage.util.VoiceModeValidator;
 import com.jotpage.util.WhisperService;
 
 import jakarta.servlet.ServletException;
@@ -246,6 +247,20 @@ public class VoiceRecordServlet extends HttpServlet {
                                 + "Check that Whisper is installed on the server."
                         : "No transcript was provided. Record or type something first.";
                 writeJsonError(resp, HttpServletResponse.SC_BAD_REQUEST, msg);
+                return;
+            }
+
+            // ---- Mode-specific transcript validation -----------------
+            // Verbatim passes straight through; other modes check that the
+            // transcript carries the signals the target format needs so we
+            // don't burn a Claude call on content it can't shape.
+            VoiceModeValidator.Result vr = VoiceModeValidator.validate(jobType, transcript, customPrompt);
+            log("[voice-record] validation=" + (vr.ok ? "ok" : "fail:" + vr.detail));
+            if (!vr.ok) {
+                markJobFailed(job, "Validation failed: " + vr.detail);
+                // 422 Unprocessable Entity — not defined as a constant on
+                // HttpServletResponse in Jakarta Servlet, so pass the literal.
+                writeJsonError(resp, 422, vr.userMessage);
                 return;
             }
 

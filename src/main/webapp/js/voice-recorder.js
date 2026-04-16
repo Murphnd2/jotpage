@@ -79,7 +79,8 @@
         elapsedTimer: null,
         selectedMode: 'verbatim',
         selectedTagIds: new Set(),
-        submitting: false
+        submitting: false,
+        lastRecognitionEndAt: 0
     };
 
     // ------------------------------------------------------------------
@@ -103,6 +104,47 @@
         if (b < 1024) return b + ' B';
         if (b < 1024 * 1024) return (b / 1024).toFixed(0) + ' KB';
         return (b / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    // Dedup helper: when SpeechRecognition restarts after a silence gap it
+    // frequently re-emits the tail of the previous utterance. Compare the
+    // end of what we've already captured against the start of the incoming
+    // chunk so we can either skip the whole chunk or trim off the overlap.
+    //
+    // Two important details for avoiding first-word doubling and false
+    // positives on short tokens:
+    //   - We scan all the way down to n=2 so a short first word ("hello",
+    //     "and", "the", "ok") can still be deduped. The previous floor of
+    //     n=6 meant any existing buffer shorter than 6 chars passed an
+    //     "echo" chunk straight through, which is exactly the case Chrome
+    //     hits when its restarted session re-emits the prior final word.
+    //   - We require the overlap to sit on word boundaries on BOTH sides:
+    //     the char preceding the tail in `existing` must be whitespace or
+    //     start-of-string, AND the char following the head in `incoming`
+    //     must be whitespace or end-of-string. That stops spurious matches
+    //     like existing="he said" / incoming="idea here" (both end/start
+    //     with "id") from corrupting the transcript.
+    function computeOverlapAppend(existing, incoming) {
+        if (!existing) return { skip: false, append: incoming };
+        if (!incoming) return { skip: true, append: '' };
+        var normExisting = existing.toLowerCase().replace(/\s+/g, ' ');
+        var normIncoming = incoming.toLowerCase().replace(/\s+/g, ' ');
+        if (normExisting.endsWith(normIncoming)) return { skip: true, append: '' };
+        var max = Math.min(80, normExisting.length, normIncoming.length);
+        for (var n = max; n >= 2; n--) {
+            var tailStart = normExisting.length - n;
+            var tail = normExisting.slice(tailStart);
+            var head = normIncoming.slice(0, n);
+            if (tail !== head) continue;
+            // Word-boundary guards: the overlap must not start mid-word.
+            var beforeOk = tailStart === 0
+                || /\s/.test(normExisting.charAt(tailStart - 1));
+            var afterOk = n === normIncoming.length
+                || /\s/.test(normIncoming.charAt(n));
+            if (!beforeOk || !afterOk) continue;
+            return { skip: false, append: incoming.slice(n) };
+        }
+        return { skip: false, append: incoming };
     }
 
     // ------------------------------------------------------------------
@@ -235,6 +277,12 @@
 
     function startRecognition() {
         if (!SpeechRecognition) return;
+        // Explicitly drop any prior instance before constructing a new one so
+        // the old object is eligible for GC and we don't leave event listeners
+        // pointing at the stale recognizer.
+        if (state.recognition) {
+            state.recognition = null;
+        }
         try {
             state.recognition = new SpeechRecognition();
             state.recognition.continuous = true;
@@ -248,10 +296,19 @@
                     var res = ev.results[i];
                     var txt = res[0] && res[0].transcript ? res[0].transcript : '';
                     if (res.isFinal) {
-                        if (state.recognitionFinal && !/\s$/.test(state.recognitionFinal)) {
-                            state.recognitionFinal += ' ';
+                        // Dedup against the tail of what we've already captured.
+                        // A restarted recognition session often re-emits the
+                        // last few words of the previous session; the helper
+                        // trims them so we don't end up with duplicate fragments.
+                        var result = computeOverlapAppend(state.recognitionFinal, txt.trim());
+                        if (!result.skip) {
+                            if (state.recognitionFinal
+                                && !/\s$/.test(state.recognitionFinal)
+                                && !/^\s/.test(result.append)) {
+                                state.recognitionFinal += ' ';
+                            }
+                            state.recognitionFinal += result.append;
                         }
-                        state.recognitionFinal += txt.trim();
                     } else {
                         interim += txt;
                     }
@@ -266,12 +323,34 @@
                 console.warn('[voice] recognition error', ev.error);
             });
             state.recognition.addEventListener('end', function () {
-                // Chrome stops recognition after a silence gap. Restart with
-                // a fresh instance so the results collection resets — reusing
-                // the same instance causes ev.results to retain all previous
-                // final results, which get re-appended and duplicate the text.
+                // Commit any interim text that was in flight through the dedup
+                // path BEFORE restarting. If we don't, the next session often
+                // hears the tail again and promotes the same words a second
+                // time, doubling them up in the transcript.
+                var pending = state.recognitionInterim;
+                if (pending) {
+                    var result = computeOverlapAppend(state.recognitionFinal, pending.trim());
+                    if (!result.skip) {
+                        if (state.recognitionFinal
+                            && !/\s$/.test(state.recognitionFinal)
+                            && !/^\s/.test(result.append)) {
+                            state.recognitionFinal += ' ';
+                        }
+                        state.recognitionFinal += result.append;
+                    }
+                    state.recognitionInterim = '';
+                    transcriptBox.value = state.recognitionFinal;
+                    paintLiveBox();
+                }
+                state.lastRecognitionEndAt = Date.now();
+                // Chrome stops recognition after a silence gap. Restart with a
+                // fresh instance so ev.results doesn't retain previous finals,
+                // but give the audio pipeline a beat to settle so the tail of
+                // the previous utterance doesn't bleed into the new session.
                 if (state.recording) {
-                    startRecognition();
+                    setTimeout(function () {
+                        if (state.recording) startRecognition();
+                    }, 250);
                 }
             });
             state.recognition.start();
@@ -532,6 +611,17 @@
                     window.location.href = res.body.redirectUrl
                         || (ctx + '/app/dashboard');
                 }, 700);
+            } else if (res.r.status === 422) {
+                // Server-side mode validator rejected the transcript. Keep
+                // what the user recorded so they can tweak the mode or edit
+                // the text and try again without starting over.
+                hideProgress();
+                state.submitting = false;
+                refreshCreateEnabled();
+                showError(res.body && res.body.error
+                    ? res.body.error
+                    : 'That mode needs different content. Try Verbatim or re-record.');
+                return;
             } else {
                 hideProgress();
                 state.submitting = false;

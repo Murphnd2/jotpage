@@ -1241,9 +1241,9 @@
     window.LOGO_URL = '${pageContext.request.contextPath}/images/jyrnyl-logo-square.svg';
 </script>
 <c:if test="${viewMode == 'book'}">
-    <script src="${pageContext.request.contextPath}/js/book-view.js?v=4"></script>
+    <script src="${pageContext.request.contextPath}/js/book-view.js?v=9"></script>
 </c:if>
-<script src="${pageContext.request.contextPath}/js/bubble-menu.js?v=4"></script>
+<script src="${pageContext.request.contextPath}/js/bubble-menu.js?v=9"></script>
 <script>
     (function () {
         var ctx = '${pageContext.request.contextPath}';

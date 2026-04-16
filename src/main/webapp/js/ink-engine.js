@@ -950,6 +950,12 @@
         content.className = 'tb-content';
         content.contentEditable = 'true';
         content.spellcheck = false;
+        content.setAttribute('inputmode', 'text');
+        content.setAttribute('enterkeyhint', 'enter');
+        content.setAttribute('autocapitalize', 'sentences');
+        // Mark as a real text surface so Android IME treats it like an input
+        content.setAttribute('role', 'textbox');
+        content.setAttribute('aria-multiline', 'true');
         content.textContent = tb.text;
 
         el.appendChild(handle);
@@ -969,6 +975,41 @@
             e.stopPropagation();
             selectTextBlock(tb.id, false);
         });
+
+        // Pen / touch: Android Chrome doesn't always surface the IME on
+        // pointer-event-driven focus of a contenteditable. After the pointer
+        // sequence completes, dispatch a synthetic click so the browser's
+        // touch-path focus handler runs. This is what gets Gboard to actually
+        // appear after the user picks "Standard" from the IME picker.
+        var needsKbdKick = false;
+        el.addEventListener('pointerdown', function (e) {
+            if (state.tool !== 'text') return;
+            if (e.pointerType === 'pen' || e.pointerType === 'touch') {
+                needsKbdKick = true;
+            }
+        }, true);
+        el.addEventListener('pointerup', function (e) {
+            if (state.tool !== 'text') return;
+            if (!needsKbdKick) return;
+            needsKbdKick = false;
+            if (!tb._content) return;
+            // Defer to next tick so the current pointer sequence finishes first
+            setTimeout(function () {
+                try {
+                    tb._content.focus({ preventScroll: true });
+                    // Synthetic click forces Chrome's touch-focus IME path
+                    var rect = tb._content.getBoundingClientRect();
+                    var clickEvent = new MouseEvent('click', {
+                        bubbles: true,
+                        cancelable: true,
+                        clientX: rect.left + Math.min(8, rect.width / 2),
+                        clientY: rect.top + Math.min(8, rect.height / 2)
+                    });
+                    tb._content.dispatchEvent(clickEvent);
+                    placeCaretAtEnd(tb._content);
+                } catch (err) { /* ignore */ }
+            }, 0);
+        }, true);
 
         // Typing updates text model + dirty flag
         content.addEventListener('input', function () {
@@ -1132,8 +1173,19 @@
         syncFontSizeControl(tb.fontSize);
         if (autoFocusCaret && tb._content) {
             setTimeout(function () {
-                tb._content.focus();
-                placeCaretAtEnd(tb._content);
+                try {
+                    tb._content.focus({ preventScroll: true });
+                    // Synthetic click kicks the touch-focus IME pathway on Android
+                    var rect = tb._content.getBoundingClientRect();
+                    var ev = new MouseEvent('click', {
+                        bubbles: true,
+                        cancelable: true,
+                        clientX: rect.left + 8,
+                        clientY: rect.top + 8
+                    });
+                    tb._content.dispatchEvent(ev);
+                    placeCaretAtEnd(tb._content);
+                } catch (err) { /* ignore */ }
             }, 0);
         }
     }

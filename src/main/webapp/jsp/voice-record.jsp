@@ -22,14 +22,14 @@
             min-height: 100vh;
         }
         .voice-main {
-            max-width: 860px;
+            max-width: 760px;
             margin: 0 auto;
-            padding: 32px 20px 80px;
+            padding: 20px 20px 48px;
         }
         .voice-header h1 {
             font-family: var(--font-serif);
             font-weight: 700;
-            font-size: 2rem;
+            font-size: 1.6rem;
             color: var(--accent-brown);
             margin: 0;
         }
@@ -38,6 +38,7 @@
             font-style: italic;
             color: var(--text-muted);
             margin-top: 2px;
+            font-size: 0.9rem;
         }
 
         .voice-card {
@@ -45,8 +46,8 @@
             border: 1px solid var(--border-warm);
             border-radius: var(--radius-lg);
             box-shadow: var(--shadow-paper);
-            padding: 28px 30px;
-            margin-top: 22px;
+            padding: 20px 22px;
+            margin-top: 14px;
         }
 
         /* Tabs */
@@ -59,14 +60,14 @@
             gap: 4px;
         }
         .mode-tab {
-            min-height: 44px;
-            padding: 0 22px;
+            min-height: 38px;
+            padding: 0 18px;
             border-radius: 999px;
             border: 0;
             background: transparent;
             color: var(--text-muted);
             font-family: var(--font-body);
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             display: inline-flex;
             align-items: center;
             gap: 8px;
@@ -80,26 +81,26 @@
         .mode-tab i { font-size: 1rem; }
 
         /* Record section */
-        .record-section { display: none; margin-top: 24px; }
+        .record-section { display: none; margin-top: 16px; }
         .record-section.active { display: block; }
-        .upload-section { display: none; margin-top: 24px; }
+        .upload-section { display: none; margin-top: 16px; }
         .upload-section.active { display: block; }
 
         .mic-wrap {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 14px;
-            padding: 28px 0 20px;
+            gap: 10px;
+            padding: 14px 0 10px;
         }
         .mic-btn {
-            width: 96px;
-            height: 96px;
+            width: 72px;
+            height: 72px;
             border-radius: 50%;
             background: var(--accent-brown);
             border: 3px solid var(--accent-brown-dark);
             color: #fff;
-            font-size: 2.2rem;
+            font-size: 1.7rem;
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -121,7 +122,7 @@
         }
         .elapsed {
             font-family: var(--font-serif);
-            font-size: 1.6rem;
+            font-size: 1.3rem;
             color: var(--accent-brown);
             font-variant-numeric: tabular-nums;
             letter-spacing: 0.04em;
@@ -233,16 +234,16 @@
             display: block;
         }
         .transcript-wrap {
-            margin-top: 32px;
+            margin-top: 18px;
         }
         .transcript-box {
             width: 100%;
-            min-height: 140px;
+            min-height: 110px;
             border: 1px solid var(--border-warm-strong);
             border-radius: var(--radius-md);
             padding: 12px 14px;
             font-family: var(--font-body);
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             line-height: 1.5;
             color: var(--text-dark);
             background: #fffdf7;
@@ -257,19 +258,19 @@
         /* Mode cards */
         .mode-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 12px;
-            margin-top: 12px;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 8px;
+            margin-top: 8px;
         }
         .mode-card {
             position: relative;
             background: var(--bg-card);
             border: 1.5px solid var(--border-warm);
             border-radius: var(--radius-md);
-            padding: 14px 14px 14px 16px;
+            padding: 10px 12px;
             cursor: pointer;
             display: flex;
-            gap: 12px;
+            gap: 10px;
             align-items: flex-start;
             transition: border-color 0.15s ease, background 0.15s ease;
         }
@@ -283,15 +284,15 @@
         }
         .mode-card .mc-icon {
             flex: 0 0 auto;
-            width: 40px;
-            height: 40px;
+            width: 32px;
+            height: 32px;
             border-radius: 8px;
             background: rgba(74, 55, 40, 0.08);
             display: flex;
             align-items: center;
             justify-content: center;
             color: var(--accent-brown);
-            font-size: 1.2rem;
+            font-size: 1rem;
         }
         .mode-card.selected .mc-icon {
             background: var(--accent-brown);
@@ -302,13 +303,13 @@
             font-family: var(--font-serif);
             font-weight: 600;
             color: var(--accent-brown);
-            font-size: 1rem;
+            font-size: 0.9rem;
             display: flex;
             align-items: center;
             gap: 6px;
         }
         .mode-card .mc-desc {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             color: var(--text-muted);
             margin-top: 2px;
             font-style: italic;
@@ -338,20 +339,20 @@
             border: 1px solid rgba(201, 168, 76, 0.35);
             color: var(--accent-brown-dark);
             border-radius: var(--radius-md);
-            padding: 10px 14px;
+            padding: 8px 12px;
             font-size: 0.88rem;
-            margin-top: 10px;
+            margin-top: 8px;
         }
         .upgrade-hint.visible { display: block; }
         .custom-prompt-wrap {
             display: none;
-            margin-top: 14px;
+            margin-top: 10px;
         }
         .custom-prompt-wrap.visible { display: block; }
 
         /* Form row */
         .form-row {
-            margin-top: 22px;
+            margin-top: 16px;
             display: flex;
             gap: 18px;
             flex-wrap: wrap;
@@ -584,7 +585,7 @@
                           placeholder="Your transcript will appear here. You can edit before creating pages."></textarea>
             </div>
 
-            <div style="margin-top: 26px;">
+            <div style="margin-top: 18px;">
                 <label class="section-label">Processing Mode</label>
                 <div class="mode-grid" id="modeGrid">
                     <div class="mode-card selected" data-mode="verbatim">
