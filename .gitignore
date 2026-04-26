@@ -15,3 +15,6 @@ src/main/resources/jotpage.properties
 
 # Google OAuth credentials JSON (downloaded from Cloud Console)
 client_secret_*.json
+
+# Claude Code runtime artifacts
+.claude/*.lock
