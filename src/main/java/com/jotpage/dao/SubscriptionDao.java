@@ -11,6 +11,21 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.sql.Types;
 
+/**
+ * DAO for the user_subscriptions table.
+ *
+ * Currently scaffolded for planned Stripe integration but NOT YET WIRED:
+ * - No servlet calls findByUserId, createOrUpdate, or isProUser
+ * - TierCheck.isProUser uses User.tier and pro.emails property instead
+ *
+ * When Stripe billing is implemented, this DAO will be wired into:
+ * - A Stripe webhook handler that calls createOrUpdate on subscription
+ *   events
+ * - TierCheck.isProUser to consult subscription status before falling
+ *   back to other tier signals
+ *
+ * See: JYRNYL-OPEN-QUESTIONS.md item #3
+ */
 public class SubscriptionDao {
 
     private static final String SELECT_COLUMNS =

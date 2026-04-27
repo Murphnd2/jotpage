@@ -2,6 +2,21 @@ package com.jotpage.model;
 
 import java.sql.Timestamp;
 
+/**
+ * Subscription record representing a user's billing state.
+ *
+ * Currently scaffolded for planned Stripe integration but NOT YET WIRED:
+ * - No code path constructs or persists Subscription instances
+ * - SubscriptionDao exists but is not called by any servlet
+ * - TierCheck currently determines tier from User.getTier() and the
+ *   pro.emails property, not from this class
+ * - pom.xml does not include the Stripe SDK dependency
+ *
+ * When Stripe billing is implemented, this class becomes the bridge
+ * between Stripe webhook events and the user_subscriptions table.
+ *
+ * See: JYRNYL-OPEN-QUESTIONS.md item #3
+ */
 public class Subscription {
 
     private long id;
