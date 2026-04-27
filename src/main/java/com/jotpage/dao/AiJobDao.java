@@ -88,7 +88,7 @@ public class AiJobDao {
 
     public int countByUserIdAndJobType(long userId, String jobType) throws SQLException {
         String sql = "SELECT COUNT(*) FROM ai_jobs WHERE user_id = ? AND job_type = ? "
-                + "AND status IN ('complete','processing')";
+                + "AND status = 'complete'";
         try (Connection conn = DbUtil.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, userId);
