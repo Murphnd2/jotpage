@@ -79,17 +79,11 @@
 
 ---
 
-## 6. `ClaudeService.java` and `WhisperService.java` javadocs say "Config comes from web.xml context params"
+## 6. ~~`ClaudeService.java` and `WhisperService.java` javadocs say "Config comes from web.xml context params"~~ ✅ RESOLVED
 
-**Title:** Javadoc comment in two utility classes references a configuration source that no longer exists
+**Title:** ~~Javadoc comment in two utility classes references a configuration source that no longer exists~~
 
-**Evidence:**
-- `ClaudeService.java:9-11`: "Config comes from **web.xml context params**: `anthropic.apiKey`"
-- `WhisperService.java:12-16`: "Config comes from **web.xml context params** (wired by the servlet layer): `whisper.command`, `whisper.model`, `ffmpeg.path`"
-- `web.xml` — contains no context params at all. Config is loaded from `jotpage.properties` via `AppConfig`.
-- `VoiceRecordServlet.java:72-74` — calls `AppConfig.get("whisper.command", "whisper")` etc., not servlet context.
-
-**Question:** These comments are misleading to a reader of the utility classes. They reflect an earlier design where the servlet layer injected config. Since the docs are otherwise sparse, this creates confusion about where the config actually comes from. Is there a reason these javadocs were not updated alongside the config migration?
+**Resolution (commit 8320f88, 2026-04-27):** Both class-level javadocs updated to read "Config comes from `jotpage.properties` (via AppConfig)" / "Config comes from `jotpage.properties` via AppConfig (wired by the servlet layer)". The stale `web.xml context params` reference is gone from both files.
 
 ---
 
@@ -161,17 +155,11 @@
 
 ---
 
-## 12. `JYRNYL_PRODUCT_SUMMARY.md` and `JYRNYL_PRODUCT_SUMMARY_v2.md` both exist with no clear deprecation marker
+## 12. ~~`JYRNYL_PRODUCT_SUMMARY.md` and `JYRNYL_PRODUCT_SUMMARY_v2.md` both exist with no clear deprecation marker~~ ✅ RESOLVED
 
-**Title:** Two product summary files with no indication which is current
+**Title:** ~~Two product summary files with no indication which is current~~
 
-**Evidence:**
-- `JYRNYL_PRODUCT_SUMMARY.md` — last modified 2026-04-15
-- `JYRNYL_PRODUCT_SUMMARY_v2.md` — last modified 2026-04-16
-- `CLAUDE.md` — does not reference either file; designates only `JOTPAGE_FULL_PROJECT_DOC.md` as authoritative.
-- Neither file contains a header marking it as superseded or current.
-
-**Question:** Is `JYRNYL_PRODUCT_SUMMARY.md` superseded by v2? Should the older file be removed or renamed to make the status clear?
+**Resolution (commit fd48ae8, 2026-04-27):** `JYRNYL_PRODUCT_SUMMARY.md` (v1) deleted. `JYRNYL_PRODUCT_SUMMARY_v2.md` is now the only product summary. Confirmed v1 was fully superseded by v2 before deletion.
 
 ---
 
@@ -189,17 +177,13 @@
 
 ---
 
-## 14. `VoiceRecordServlet` marks an AI job as `processing` before Whisper completes, then `complete` or `failed` after
+## 14. ~~`VoiceRecordServlet` marks an AI job as `processing` before Whisper completes, then `complete` or `failed` after~~ ✅ RESOLVED
 
-**Title:** `ai_jobs` status does not reflect Whisper transcription as a distinct phase
+**Title:** ~~`ai_jobs` status does not reflect Whisper transcription as a distinct phase~~
 
-**Evidence:**
-- `VoiceRecordServlet.java:200-216`: job is created with `status = "processing"` before either Whisper or Claude runs.
-- `VoiceRecordServlet.java:341`: `aiJobDao.updateStatus(job.getId(), "complete", outputText, null)` — set only after page creation succeeds.
-- `AiJob.status ENUM`: `pending, processing, complete, failed` — no `transcribing` state.
-- `AiJobDao.countByUserIdAndJobType()` at line 90 counts statuses `complete` and `processing` for trial enforcement.
-
-**Question:** If Whisper succeeds but Claude fails (Claude API error), the job ends up `failed` with an error message, which is correct. However, if the server restarts mid-job, the job will be stuck in `processing` forever with no cleanup. Is this an acceptable risk at the current traffic level, or should a stuck-job recovery be added?
+**Resolution (commit aed273f, 2026-04-27):** Two fixes applied:
+1. `AppStartupListener.java` (`com.jotpage.listener`, `@WebListener`) — on `contextInitialized`, runs `UPDATE ai_jobs SET status='failed', error_message='Recovered: server restarted while processing' WHERE status IN ('processing','pending')`. Any row stuck in `processing` or `pending` is recovered to `failed` on every Tomcat startup.
+2. `AiJobDao.countByUserIdAndJobType()` — WHERE clause changed from `status IN ('complete','processing')` to `status = 'complete'`. A stuck `processing` row no longer consumes a user's free-tier trial quota.
 
 ---
 
@@ -216,4 +200,4 @@
 
 ---
 
-*End of open questions — 15 items total.*
+*End of open questions — 15 items total (3 resolved: #6, #12, #14).*
