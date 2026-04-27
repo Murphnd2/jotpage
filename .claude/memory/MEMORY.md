@@ -8,3 +8,4 @@
 - [External systems for Jyrnyl](reference_external_systems.md) — GitHub, Google Cloud Console, Anthropic Console, Cloudflare, IONOS.
 - [Voice Booth UX rethink tabled; still-open bugs](project_voice_booth_rethink.md) — UX tabled; first-word dedup bug + reapply tablet phases against new editor + investigate unexpected logout.
 - [SSH login separate from remote commands](feedback_deploy_ssh.md) — Always emit `ssh user@host` as its own step and wait; never combine it with the remote command.
+- [Stripe scaffolding (planned)](project_stripe_scaffolding.md) — Intentionally kept; Subscription/SubscriptionDao/user_subscriptions table ready; SDK + webhook handler still needed.

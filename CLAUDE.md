@@ -74,7 +74,7 @@ When you learn something memory-worthy (user / feedback / project / reference pe
 Items below reference numbers in [`JYRNYL-OPEN-QUESTIONS.md`](.claude/inventory/JYRNYL-OPEN-QUESTIONS.md). Surface-only — see that file for evidence.
 
 - **#1, #2 — `SETUP.md` is obsolete.** Pre-rebrand and pre-secrets-externalization, contains JNDI guidance that contradicts the current code. Do not use it as a reference for current work.
-- **#3 — Stripe scaffolding is not wired.** `Subscription`, `SubscriptionDao`, and the `user_subscriptions` table exist; no servlet calls them and `pom.xml` has no Stripe SDK. Confirm intent before either implementing or deleting.
+- **#3 — Stripe scaffolding is intentional.** `Subscription`, `SubscriptionDao`, and the `user_subscriptions` table are scaffolded for planned billing implementation — keep them. See [`.claude/memory/project_stripe_scaffolding.md`](.claude/memory/project_stripe_scaffolding.md) for what exists, what's missing, and the implementation checklist.
 - **#5 — `project_deploy_flow.md` claims `CACHE_VERSION = 'v4'`.** It's actually `'v9'` in `sw.js`. Always check `sw.js` directly rather than the memory note.
 - **#14 — `ai_jobs` has no stuck-`processing` recovery.** If Tomcat restarts mid-job, that row stays `processing` forever. Currently acceptable at this traffic level; revisit before scale.
 - **#15 — Internal name "jotpage" vs. brand "Jyrnyl" is intentional.** Maven artifactId, DB schema, Java packages, and the WAR filename all stay `jotpage`. Only the user-facing surface is "Jyrnyl".
