@@ -17,7 +17,7 @@ import java.nio.charset.StandardCharsets;
 /**
  * Thin wrapper around the Anthropic Messages API.
  *
- * Config comes from web.xml context params:
+ * Config comes from jotpage.properties (via AppConfig):
  *   anthropic.apiKey
  *
  * Usage:
@@ -87,7 +87,7 @@ public class ClaudeService {
                 return "You are an academic assistant. Take the following transcript and "
                         + "extract a clean structured outline with main topics and subtopics. "
                         + "Use markdown with ## for main topics and - for subtopics. Be "
-                        + "concise \u2014 capture the structure, not every detail.";
+                        + "concise — capture the structure, not every detail.";
             case "custom":
                 String cp = (customPrompt == null) ? "" : customPrompt.trim();
                 if (cp.isEmpty()) {

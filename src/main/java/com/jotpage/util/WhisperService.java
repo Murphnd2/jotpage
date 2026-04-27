@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Runs the Whisper CLI as a subprocess and returns the transcript text.
  *
- * Config comes from web.xml context params (wired by the servlet layer):
+ * Config comes from jotpage.properties via AppConfig (wired by the servlet layer):
  *   whisper.command   (default: "whisper")
  *   whisper.model     (default: "base")
  *   ffmpeg.path       (optional: directory containing ffmpeg.exe / ffmpeg)
