@@ -86,3 +86,7 @@ All three production secrets — Google OAuth client secret, Anthropic API key, 
 ## What NOT to assume
 
 This file is a snapshot. Versions, branches, deployed state, cache version numbers, and credential property names drift over time. For anything time-sensitive, read the authoritative source directly — `git log` for history, the live `/etc/tomcat10/jotpage.properties` for runtime config, `sw.js` for the current cache version, and the running server for deployed behaviour — rather than trusting this file.
+
+## Cross-cutting knowledge
+
+Shared preferences, lessons, and conventions are in `.claude/toolkit/` (git submodule from kevin-claude-toolkit). Read those files for context on working preferences, build hygiene, EclipseLink gotchas, secret rotation procedures, and git workflow conventions.
