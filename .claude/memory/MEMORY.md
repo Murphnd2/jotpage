@@ -9,3 +9,4 @@
 - [Voice Booth UX rethink tabled; still-open bugs](project_voice_booth_rethink.md) — UX tabled; first-word dedup bug + reapply tablet phases against new editor + investigate unexpected logout.
 - [SSH login separate from remote commands](feedback_deploy_ssh.md) — Always emit `ssh user@host` as its own step and wait; never combine it with the remote command.
 - [Stripe scaffolding (planned)](project_stripe_scaffolding.md) — Intentionally kept; Subscription/SubscriptionDao/user_subscriptions table ready; SDK + webhook handler still needed.
+- [AMS sister project and cross-project context](reference_ams_sister_project.md) — Background on Kevin's other project (AMS), shared technical lessons, inventory methodology, and the planned-but-not-built toolkit concept.
