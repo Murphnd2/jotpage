@@ -6,7 +6,6 @@ import com.jotpage.model.User;
 import com.jotpage.util.AdminCheck;
 
 import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -17,7 +16,6 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.List;
 
-@WebServlet("/app/admin/blog/*")
 public class AdminBlogServlet extends HttpServlet {
 
     private final BlogPostDao blogPostDao = new BlogPostDao();
