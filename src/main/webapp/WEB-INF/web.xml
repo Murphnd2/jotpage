@@ -68,6 +68,24 @@
         <url-pattern>/logout</url-pattern>
     </servlet-mapping>
 
+    <servlet>
+        <servlet-name>BlogServlet</servlet-name>
+        <servlet-class>com.jotpage.servlet.BlogServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>BlogServlet</servlet-name>
+        <url-pattern>/blog/*</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>AdminBlogServlet</servlet-name>
+        <servlet-class>com.jotpage.servlet.AdminBlogServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>AdminBlogServlet</servlet-name>
+        <url-pattern>/app/admin/blog/*</url-pattern>
+    </servlet-mapping>
+
     <welcome-file-list>
         <welcome-file>index.jsp</welcome-file>
     </welcome-file-list>
