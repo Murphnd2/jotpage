@@ -48,6 +48,7 @@
     var upgradeHint = document.getElementById('upgradeHint');
     var customPromptWrap = document.getElementById('customPromptWrap');
     var customPrompt = document.getElementById('customPrompt');
+    var customPromptCount = document.getElementById('customPromptCount');
     var fontSizeSelect = document.getElementById('fontSize');
     var tagList = document.getElementById('tagList');
     var newTagForm = document.getElementById('newTagInline');
@@ -160,6 +161,9 @@
     }
     tabRecord.addEventListener('click', function () { activateTab('record'); });
     tabUpload.addEventListener('click', function () { activateTab('upload'); });
+    customPrompt.addEventListener('input', function () {
+        if (customPromptCount) customPromptCount.textContent = customPrompt.value.length + ' / 2,000';
+    });
     if (switchToUploadLink) {
         switchToUploadLink.addEventListener('click', function (e) {
             e.preventDefault();

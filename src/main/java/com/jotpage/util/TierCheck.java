@@ -40,6 +40,9 @@ public final class TierCheck {
     public static final int FREE_CUSTOM_TEMPLATE_LIMIT = 5;
     public static final int FREE_AI_TRIAL_PER_MODE = 1;
 
+    /** Monthly AI job cap for paid Pro users (whitelist accounts are exempt). */
+    public static final int PRO_MONTHLY_AI_JOB_LIMIT = 100;
+
     /** Sentinel returned by {@link #getMonthlyPageLimit(User)} meaning "no cap". */
     public static final int UNLIMITED = -1;
 
@@ -119,6 +122,36 @@ public final class TierCheck {
         int limit = getMonthlyPageLimit(user);
         if (limit == UNLIMITED) return true;
         return pagesCreatedThisMonth < limit;
+    }
+
+    /**
+     * Returns the monthly AI job cap for this user.
+     *
+     * Whitelist accounts (pro.emails) are exempt and get UNLIMITED so that
+     * developer/admin accounts are never blocked. Regular Pro users are capped
+     * at PRO_MONTHLY_AI_JOB_LIMIT. Free users return FREE_AI_TRIAL_PER_MODE
+     * as a sentinel, but free-user AI access is enforced per-mode elsewhere.
+     */
+    public static int getMonthlyAiJobLimit(User user) {
+        if (user == null) return 0;
+        if (user.getEmail() != null
+                && getProEmails().contains(user.getEmail().toLowerCase())) {
+            return UNLIMITED;
+        }
+        if ("pro".equalsIgnoreCase(user.getTier())) {
+            return PRO_MONTHLY_AI_JOB_LIMIT;
+        }
+        return FREE_AI_TRIAL_PER_MODE;
+    }
+
+    /**
+     * Returns true if the user may run another AI job given the number of
+     * AI jobs they have already run in the current calendar month.
+     */
+    public static boolean canRunAiJob(User user, int aiJobsThisMonth) {
+        int limit = getMonthlyAiJobLimit(user);
+        if (limit == UNLIMITED) return true;
+        return aiJobsThisMonth < limit;
     }
 
     /**

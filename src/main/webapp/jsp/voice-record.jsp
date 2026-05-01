@@ -669,8 +669,9 @@
 
                 <div class="custom-prompt-wrap" id="customPromptWrap">
                     <label class="section-label" for="customPrompt">Custom instructions</label>
-                    <textarea id="customPrompt" class="transcript-box" rows="3"
+                    <textarea id="customPrompt" class="transcript-box" rows="3" maxlength="2000"
                               placeholder="e.g. Summarize as a list of open questions and unresolved issues"></textarea>
+                    <div id="customPromptCount" style="font-size:0.78rem;color:#8a7e74;text-align:right;margin-top:4px;">0 / 2,000</div>
                 </div>
             </div>
 

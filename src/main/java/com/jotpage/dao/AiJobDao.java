@@ -71,6 +71,18 @@ public class AiJobDao {
         }
     }
 
+    public void updateTokenUsage(long jobId, int inputTokens, int outputTokens)
+            throws SQLException {
+        String sql = "UPDATE ai_jobs SET input_tokens = ?, output_tokens = ? WHERE id = ?";
+        try (Connection conn = DbUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, inputTokens);
+            ps.setInt(2, outputTokens);
+            ps.setLong(3, jobId);
+            ps.executeUpdate();
+        }
+    }
+
     public List<AiJob> findByUserId(long userId) throws SQLException {
         String sql = SELECT_COLUMNS + " WHERE user_id = ? ORDER BY created_at DESC LIMIT 50";
         List<AiJob> results = new ArrayList<>();

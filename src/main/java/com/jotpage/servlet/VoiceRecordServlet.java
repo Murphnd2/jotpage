@@ -16,6 +16,7 @@ import com.jotpage.model.PageType;
 import com.jotpage.model.UsageRecord;
 import com.jotpage.model.User;
 import com.jotpage.util.AppConfig;
+import com.jotpage.util.ClaudeResult;
 import com.jotpage.util.ClaudeService;
 import com.jotpage.util.PageSplitter;
 import com.jotpage.util.TierCheck;
@@ -55,6 +56,9 @@ public class VoiceRecordServlet extends HttpServlet {
     private static final int TEXT_W = 1380;
     private static final int TEXT_H = 2000;
     private static final String TEXT_COLOR = "#3b2f2f";
+
+    private static final int MAX_CUSTOM_PROMPT_CHARS = 2000;
+    private static final int MAX_TRANSCRIPT_WORDS = 6000;
 
     private final TagDao tagDao = new TagDao();
     private final PageDao pageDao = new PageDao();
@@ -139,6 +143,7 @@ public class VoiceRecordServlet extends HttpServlet {
         // PageSplitter.POINT_TO_PIXEL when writing the text_layers JSON so
         // ink-engine renders the block at the correct real-world size.
         int fontSize = intParam(req, "fontSize", 16);
+        fontSize = effectiveFontSize(jobType, fontSize);
         String tagIdsStr = stringParam(req, "tagIds", "");
 
         boolean isPro = TierCheck.isPro(user);
@@ -164,6 +169,19 @@ public class VoiceRecordServlet extends HttpServlet {
                 } catch (SQLException e) {
                     throw new ServletException(e);
                 }
+            } else {
+                try {
+                    UsageRecord usage = usageDao.findOrCreateCurrentMonth(user.getId());
+                    int aiJobsThisMonth = usage == null ? 0 : usage.getAiJobsRun();
+                    if (!TierCheck.canRunAiJob(user, aiJobsThisMonth)) {
+                        writeJsonError(resp, 429,
+                                "You’ve reached your monthly AI processing limit (100 jobs). "
+                                        + "Your limit resets at the start of next month.");
+                        return;
+                    }
+                } catch (SQLException e) {
+                    throw new ServletException(e);
+                }
             }
             if (claudeService == null) {
                 writeJsonError(resp, HttpServletResponse.SC_SERVICE_UNAVAILABLE,
@@ -174,6 +192,12 @@ public class VoiceRecordServlet extends HttpServlet {
                     && (customPrompt == null || customPrompt.trim().isEmpty())) {
                 writeJsonError(resp, HttpServletResponse.SC_BAD_REQUEST,
                         "A custom prompt is required for the Custom job type.");
+                return;
+            }
+            if ("custom".equals(jobType)
+                    && customPrompt != null && customPrompt.trim().length() > MAX_CUSTOM_PROMPT_CHARS) {
+                writeJsonError(resp, HttpServletResponse.SC_BAD_REQUEST,
+                        "Custom prompt is too long (max 2,000 characters). Please shorten it.");
                 return;
             }
         }
@@ -264,13 +288,29 @@ public class VoiceRecordServlet extends HttpServlet {
                 return;
             }
 
+            // ---- Transcript truncation ------------------------------
+            String[] transcriptWords = transcript.split("\\s+");
+            if (transcriptWords.length > MAX_TRANSCRIPT_WORDS) {
+                int originalWordCount = transcriptWords.length;
+                StringBuilder truncated = new StringBuilder();
+                for (int i = 0; i < MAX_TRANSCRIPT_WORDS; i++) {
+                    if (i > 0) truncated.append(' ');
+                    truncated.append(transcriptWords[i]);
+                }
+                transcript = truncated.toString();
+                log("[voice] transcript truncated from " + originalWordCount
+                        + " to 6000 words for userId=" + user.getId());
+            }
+
             // ---- LLM processing --------------------------------------
+            ClaudeResult claudeResult = null;
             String outputText;
             if ("verbatim".equals(jobType)) {
                 outputText = transcript;
             } else {
                 try {
-                    outputText = claudeService.process(transcript, jobType, customPrompt);
+                    claudeResult = claudeService.process(transcript, jobType, customPrompt);
+                    outputText = claudeResult.getText();
                 } catch (Exception e) {
                     log("[voice] Claude processing failed", e);
                     markJobFailed(job, "AI processing failed: " + e.getMessage());
@@ -342,6 +382,16 @@ public class VoiceRecordServlet extends HttpServlet {
             } catch (SQLException e) {
                 markJobFailed(job, "Page creation failed: " + e.getMessage());
                 throw new ServletException(e);
+            }
+
+            if (claudeResult != null && claudeResult.getInputTokens() >= 0) {
+                try {
+                    aiJobDao.updateTokenUsage(job.getId(),
+                            claudeResult.getInputTokens(), claudeResult.getOutputTokens());
+                } catch (SQLException e) {
+                    log("[voice] token usage update failed for job " + job.getId()
+                            + ": " + e.getMessage());
+                }
             }
 
             log("[voice] created pages " + createdPageIds);
@@ -440,6 +490,22 @@ public class VoiceRecordServlet extends HttpServlet {
             Files.copy(in, temp, StandardCopyOption.REPLACE_EXISTING);
         }
         return temp.toFile();
+    }
+
+    /**
+     * Returns the effective font size for the given job type.
+     * Some AI modes override the user's font-size selection to achieve
+     * proper document density on the A5 journal page.
+     *
+     * Meeting minutes: 9pt (equivalent to 12pt on US Letter, scaled to A5)
+     */
+    private int effectiveFontSize(String jobType, int userFontSize) {
+        switch (jobType) {
+            case "meeting_minutes":
+                return 9;
+            default:
+                return userFontSize;
+        }
     }
 
     private void markJobFailed(AiJob job, String msg) {

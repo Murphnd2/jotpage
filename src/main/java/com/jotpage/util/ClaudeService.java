@@ -19,10 +19,11 @@ import java.nio.charset.StandardCharsets;
  *
  * Config comes from jotpage.properties (via AppConfig):
  *   anthropic.apiKey
+ *   claude.model.<jobType>  (optional per-mode override, e.g. claude.model.outline)
  *
  * Usage:
  *   ClaudeService svc = new ClaudeService(apiKey);
- *   String out = svc.process(inputText, "study_notes", null);
+ *   ClaudeResult out = svc.process(inputText, "study_notes", null);
  *
  * The LLM HTTP call lives in a single private method (sendRequest) so swapping
  * to a different provider later means replacing that one method — the public
@@ -30,9 +31,12 @@ import java.nio.charset.StandardCharsets;
  */
 public class ClaudeService {
 
+    private static final java.util.logging.Logger LOG =
+            java.util.logging.Logger.getLogger(ClaudeService.class.getName());
+
     private static final String API_URL = "https://api.anthropic.com/v1/messages";
     private static final String ANTHROPIC_VERSION = "2023-06-01";
-    private static final String MODEL = "claude-sonnet-4-20250514";
+    private static final String DEFAULT_MODEL = "claude-sonnet-4-20250514";
     private static final int MAX_TOKENS = 4096;
     private static final int CONNECT_TIMEOUT_MS = 30_000;
     private static final int READ_TIMEOUT_MS = 120_000;
@@ -56,12 +60,36 @@ public class ClaudeService {
      *                     outline, custom
      * @param customPrompt Required only when jobType == "custom"; used as the
      *                     system prompt with a clarifying prefix.
-     * @return The assistant's response text.
+     * @return ClaudeResult containing the assistant response text and token counts.
      */
-    public String process(String inputText, String jobType, String customPrompt) {
+    public ClaudeResult process(String inputText, String jobType, String customPrompt) {
         if (inputText == null) inputText = "";
         String system = systemPromptFor(jobType, customPrompt);
-        return sendRequest(system, inputText);
+        String model = modelFor(jobType);
+        ClaudeResult result = sendRequest(system, inputText, model);
+        LOG.info("[claude] model=" + model + " jobType=" + jobType
+                + " inputTokens=" + result.getInputTokens()
+                + " outputTokens=" + result.getOutputTokens());
+        return result;
+    }
+
+    /**
+     * Resolves the model to use for a given job type.
+     * Checks for a per-mode property (e.g. claude.model.study_notes) first;
+     * falls back to DEFAULT_MODEL if none is set.
+     */
+    private String modelFor(String jobType) {
+        if (jobType != null && !jobType.isEmpty()) {
+            String override = AppConfig.get("claude.model." + jobType, "").trim();
+            if (!override.isEmpty()) {
+                return override;
+            }
+        }
+        String defaultOverride = AppConfig.get("claude.model.default", "").trim();
+        if (!defaultOverride.isEmpty()) {
+            return defaultOverride;
+        }
+        return DEFAULT_MODEL;
     }
 
     private String systemPromptFor(String jobType, String customPrompt) {
@@ -74,10 +102,22 @@ public class ClaudeService {
                         + "headers, **bold** for key terms, and bullet points. Organize "
                         + "logically by topic, not chronologically.";
             case "meeting_minutes":
-                return "You are a professional meeting assistant. Take the following transcript "
-                        + "and create structured meeting minutes with: Attendees (if mentioned), "
-                        + "Key Discussion Points, Decisions Made, Action Items (with owners if "
-                        + "mentioned), and Next Steps. Use markdown formatting.";
+                return "You are a professional meeting secretary. Transform the following "
+                        + "transcript into formal meeting minutes using clean plain text only.\n\n"
+                        + "DO NOT use any markdown formatting — no #, ##, **, *, -, or backticks. "
+                        + "The output will be rendered as plain text on a journal page.\n\n"
+                        + "Format the minutes as follows:\n"
+                        + "- Title and meeting details at top using labeled fields (Date:, Time:, "
+                        + "Presiding:) with consistent colon alignment\n"
+                        + "- ALL CAPS for section headers\n"
+                        + "- 4-space indentation for nested content\n"
+                        + "- Numbered agenda items (1. 2. 3.)\n"
+                        + "- Discussion as flowing prose paragraphs, not bullet lists\n"
+                        + "- Clearly labeled \"Decision:\" and \"Action:\" lines\n"
+                        + "- Horizontal separator line of dashes between header block and body\n"
+                        + "- Omit any section where information was not mentioned in the transcript\n\n"
+                        + "Produce clean, professional minutes that a town clerk or corporate "
+                        + "secretary would recognize as properly formatted.";
             case "journal_entry":
                 return "You are a reflective writing assistant. Take the following transcript "
                         + "and rewrite it as a thoughtful first-person journal entry. Maintain "
@@ -105,9 +145,9 @@ public class ClaudeService {
     // Private: the only place that talks HTTP to the LLM. Swap this to
     // retarget a different provider.
     // ------------------------------------------------------------------
-    private String sendRequest(String systemPrompt, String userText) {
+    private ClaudeResult sendRequest(String systemPrompt, String userText, String model) {
         JsonObject body = new JsonObject();
-        body.addProperty("model", MODEL);
+        body.addProperty("model", model);
         body.addProperty("max_tokens", MAX_TOKENS);
         body.addProperty("system", systemPrompt);
         JsonArray messages = new JsonArray();
@@ -149,6 +189,8 @@ public class ClaudeService {
                 throw new RuntimeException(
                         "Claude API: unexpected response shape: " + responseBody);
             }
+
+            // Extract assistant text from content[]
             JsonArray content = resp.getAsJsonArray("content");
             StringBuilder out = new StringBuilder();
             for (int i = 0; i < content.size(); i++) {
@@ -159,7 +201,21 @@ public class ClaudeService {
                     out.append(part.get("text").getAsString());
                 }
             }
-            return out.toString();
+
+            // Extract token usage — default to -1 if the field is absent
+            int inputTokens = -1;
+            int outputTokens = -1;
+            if (resp.has("usage") && resp.get("usage").isJsonObject()) {
+                JsonObject usage = resp.getAsJsonObject("usage");
+                if (usage.has("input_tokens")) {
+                    inputTokens = usage.get("input_tokens").getAsInt();
+                }
+                if (usage.has("output_tokens")) {
+                    outputTokens = usage.get("output_tokens").getAsInt();
+                }
+            }
+
+            return new ClaudeResult(out.toString(), inputTokens, outputTokens);
         } catch (IOException e) {
             throw new RuntimeException("Claude API: network failure", e);
         } finally {
